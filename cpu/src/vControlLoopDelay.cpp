@@ -20,6 +20,7 @@
 
 int main(int argc, char * argv[])
 {
+
     /* initialize yarp network */
     yarp::os::Network yarp;
     if(!yarp.checkNetwork()) {
@@ -93,7 +94,7 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
     attach(rpcPort);
 
     //options and parameters
-    px = py = pr = 0;
+    px = py = pa = pb = 0;
     res.height = rf.check("height", Value(240)).asInt();
     res.width = rf.check("width", Value(304)).asInt();
     gain = rf.check("gain", Value(0.0005)).asDouble();
@@ -121,11 +122,12 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
                    rf.check("negbias", yarp::os::Value(10.0)).asDouble());
 
     yarp::os::Bottle * seed = rf.find("seed").asList();
-    if(seed && seed->size() == 3) {
+    if(seed && seed->size() == 4) {
         yInfo() << "Setting initial seed state:" << seed->toString();
         vpf.setSeed(seed->get(0).asDouble(),
                     seed->get(1).asDouble(),
-                    seed->get(2).asDouble());
+                    seed->get(2).asDouble(),
+                    seed->get(3).asDouble());
         vpf.resetToSeed();
     }
 
@@ -178,17 +180,17 @@ void delayControl::setTrueThreshold(double value)
     detectionThreshold = value * maxRawLikelihood;
 }
 
-void delayControl::performReset(int x, int y, int r)
+void delayControl::performReset(int x, int y, int a, int b)
 {
     if(x > 0)
-        vpf.setSeed(x, y, r);
+        vpf.setSeed(x, y, a, b);
     vpf.resetToSeed();
     input_port.resume();
 }
 
 yarp::sig::Vector delayControl::getTrackingStats()
 {
-    yarp::sig::Vector stats(10);
+    yarp::sig::Vector stats(11);
 
     stats[0] = 1000*input_port.queryDelayT();
     stats[1] = 1.0/filterPeriod;
@@ -196,7 +198,8 @@ yarp::sig::Vector delayControl::getTrackingStats()
     stats[3] = input_port.queryRate() / 1000.0;
     stats[4] = dx;
     stats[5] = dy;
-    stats[6] = dr;
+    stats[6] = da;
+    stats[10] = db;
     stats[7] = vpf.maxlikelihood / (double)maxRawLikelihood;
     stats[8] = cpuusage.getProcessorUsage();
     stats[9] = qROI.n;
@@ -243,7 +246,7 @@ void delayControl::run()
     //START HERE!!
     const vector<AE> *q = input_port.read(ystamp);
     if(!q || Thread::isStopping()) return;
-    vpf.extractTargetPosition(avgx, avgy, avgr);
+    vpf.extractTargetPosition(avgx, avgy, avga, avgb);
 
     channel = q->front().getChannel();
 
@@ -252,7 +255,7 @@ void delayControl::run()
         //calculate error
         double delay = input_port.queryDelayT();
         unsigned int unprocdqs = input_port.queryunprocessed();
-        targetproc = M_PI * avgr;
+        targetproc = M_PI * avga;
         if(unprocdqs > 1 && delay > gain)
             targetproc *= (delay / gain);
 
@@ -296,10 +299,10 @@ void delayControl::run()
         Tlikelihood = yarp::os::Time::now() - Tlikelihood;
 
         //set our new position
-        dx = avgx, dy = avgy, dr = avgr;
-        vpf.extractTargetPosition(avgx, avgy, avgr);
-        dx = avgx - dx; dy = avgy - dy; dr = avgr - dr;
-        double roisize = avgr + 10;
+        dx = avgx, dy = avgy, da = avga; db = avgb;
+        vpf.extractTargetPosition(avgx, avgy, avga, avgb);
+        dx = avgx - dx; dy = avgy - dy; da = avga - da; db = avgb - db;
+        double roisize = avga + 50;
         qROI.setROI(avgx - roisize, avgx + roisize, avgy - roisize, avgy + roisize);
 
         //set our new window #events
@@ -352,7 +355,8 @@ void delayControl::run()
         if(dpos > output_sample_delta) {
             px = avgx;
             py = avgy;
-            pr = avgr;
+            pa = avga;
+            pb = avgb;
             //output our event
             if(event_output_port.getOutputCount()) {
                 auto ceg = make_event<GaussianAE>();
@@ -360,7 +364,7 @@ void delayControl::run()
                 ceg->setChannel(channel);
                 ceg->x = avgx;
                 ceg->y = avgy;
-                ceg->sigx = avgr;
+                ceg->sigx = avga;
                 ceg->sigy = tw;
                 ceg->sigxy = 1.0;
                 if(vpf.maxlikelihood > detectionThreshold)
@@ -382,7 +386,8 @@ void delayControl::run()
                 next_sample.addDouble(Time::now());
                 next_sample.addDouble(avgx);
                 next_sample.addDouble(avgy);
-                next_sample.addDouble(avgr);
+                next_sample.addDouble(avga);
+                next_sample.addDouble(avgb);
                 next_sample.addDouble(channel);
                 next_sample.addDouble(tw);
                 next_sample.addDouble(vpf.maxlikelihood);
@@ -405,8 +410,8 @@ void delayControl::run()
         //output a debug image
         if(debugPort.getOutputCount()) {
 
-            //static double prev_likelihood = vpf.maxlikelihood;
-            static int NOFPANELS = 3;
+            static double prev_likelihood = vpf.maxlikelihood;
+            static int NOFPANELS = 1;
 
             static yarp::sig::ImageOf< yarp::sig::PixelBgr> *image_ptr = 0;
             static int panelnumber = NOFPANELS;
@@ -416,12 +421,11 @@ void delayControl::run()
             //if we are in waiting state, check trigger condition
             bool trigger_capture = false;
             if(panelnumber >= NOFPANELS) {
-                //trigger_capture = prev_likelihood > detectionThreshold &&
-                 //       vpf.maxlikelihood <= detectionThreshold;
+                // trigger_capture = prev_likelihood > detectionThreshold &&
+                //         vpf.maxlikelihood <= detectionThreshold;
                 trigger_capture = yarp::os::Time::now() - pimagetime > 0.1;
             }
-            //prev_likelihood = vpf.maxlikelihood;
-
+            prev_likelihood = vpf.maxlikelihood;
             //if we are in waiting state and
             if(trigger_capture) {
                 //trigger the capture of the panels only if we aren't already
@@ -588,12 +592,13 @@ bool delayControl::respond(const yarp::os::Bottle& command,
     }
     case CMD_START:
     {
-        if(command.size() == 4) {
+        if(command.size() == 5) {
             int x = command.get(1).asInt();
             int y = command.get(2).asInt();
-            int r = command.get(3).asInt();
+            int a = command.get(3).asInt();
+            int b = command.get(4).asInt();
             reply.addString("resetting particle positions to custom positions");
-            performReset(x, y, r);
+            performReset(x, y, a, b);
         } else {
             reply.addString("resetting particle positions to seed");
             performReset();

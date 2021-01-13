@@ -57,10 +57,10 @@ public:
         offsety = 0;
     }
 
-    void configure(int height, int width, double maxrad, int nBins)
+    void configure(int height, int width, double maxa, double maxb, int nBins)
     {
-        rows = (height + maxrad) * 2 + 1;
-        cols = (width + maxrad) * 2 + 1;
+        rows = (height + maxb) * 2 + 1;
+        cols = (width + maxa) * 2 + 1;
         offsety = rows/2;
         offsetx = cols/2;
 
@@ -136,7 +136,9 @@ private:
     bool constrain;
     int minx, maxx;
     int miny, maxy;
-    int minr, maxr;
+    //int minr, maxr;
+    int mina, maxa;
+    int minb, maxb;
 
     //temporary parameters (on update cycle)
     double likelihood;
@@ -150,7 +152,9 @@ private:
     //state and weight
     double x;
     double y;
-    double r;
+    //double r;
+    double a;
+    double b;
 
     double weight;
 
@@ -167,13 +171,13 @@ public:
     void updateMinLikelihood(double value);
     void attachPCB(preComputedBins *pcb) { this->pcb = pcb; }
 
-    void initialiseState(double x, double y, double r);
-    void randomise(int x, int y, int r);
+    void initialiseState(double x, double y, double a, double b);
+    void randomise(int x, int y, int a, int b);
 
     void resetWeight(double value);
     void resetRadius(double value);
     void resetArea();
-    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr);
+    void setContraints(int minx, int maxx, int miny, int maxy, int mina, int maxa, int minb, int maxb);
     void checkConstraints();
     void setNegativeBias(double value);
     void setInlierParameter(double value);
@@ -199,13 +203,15 @@ public:
     {
         double dx = vx - x;
         double dy = vy - y;
-
-        double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
+        double theta = atan2(dy, dx);
+        //double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
         //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
+        double sqrd = sqrt(pow(dx*cos(theta), 2.0) + pow(dy*sin(theta), 2.0));
+
         double fsqrd = std::fabs(sqrd);
 
         //int a = 0.5 + (angbuckets-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
-        int a = pcb->queryBinNumber((int)dy, (int)dx);
+        int al = pcb->queryBinNumber((int)dy, (int)dx);
 
         //OPTION 2
 
@@ -218,9 +224,9 @@ public:
         else if(fsqrd < 1.0 + inlierParameter)
             cval = (1.0 + inlierParameter - fsqrd) / inlierParameter;
         if(cval) {
-            double improve = cval - angdist[a];
+            double improve = cval - angdist[al];
             if(improve > 0) {
-                angdist[a] = cval;
+                angdist[al] = cval;
                 score += improve;
                 if(score >= likelihood) {
                     likelihood = score;
@@ -275,7 +281,8 @@ public:
     inline int    getid() { return id; }
     inline double getx()  { return x; }
     inline double gety()  { return y; }
-    inline double getr()  { return r; }
+    inline double geta()  { return a; }
+    inline double getb()  { return b; }
     inline double getw()  { return weight; }
     inline double getl()  { return likelihood; }
     inline double getnw() { return nw; }
@@ -324,7 +331,7 @@ private:
     ev::resolution res;
     bool adaptive;
     int bins;
-    int seedx, seedy, seedr;
+    int seedx, seedy, seeda, seedb;
     double nRandoms;
 
     //data
@@ -336,8 +343,10 @@ private:
 
     //variables
     double pwsumsq;
-    int rbound_min;
-    int rbound_max;
+    int abound_min;
+    int abound_max;
+    int bbound_min;
+    int bbound_max;
 
 public:
 
@@ -349,7 +358,7 @@ public:
                     int bins, bool adaptive, int nthreads, double minlikelihood,
                     double inlierThresh, double randoms, double negativeBias);
 
-    void setSeed(int x, int y, int r = 0);
+    void setSeed(int x, int y, int a = 0, int b = 0);
     void resetToSeed();
     void setMinLikelihood(double value);
     void setInlierParameter(double value);
@@ -357,7 +366,7 @@ public:
     void setAdaptive(bool value = true);
 
     void performObservation(const deque<AE> &q);
-    void extractTargetPosition(double &x, double &y, double &r);
+    void extractTargetPosition(double &x, double &y, double &a, double &b);
     void extractTargetWindow(double &tw);
     void performResample();
     void performPrediction(double sigma);
