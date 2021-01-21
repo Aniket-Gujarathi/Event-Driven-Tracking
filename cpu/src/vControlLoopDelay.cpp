@@ -300,7 +300,7 @@ void delayControl::run()
         vpf.extractTargetPosition(avgx, avgy, avgr);
         dx = avgx - dx; dy = avgy - dy; dr = avgr - dr;
         double roisize = avgr + 10;
-        qROI.setROI(avgx - roisize, avgx + roisize, avgy - roisize, avgy + roisize);
+        qROI.setROI(avgx - roisize - 30, avgx + roisize + 30, avgy - roisize - 10, avgy + roisize + 10);
 
         //set our new window #events
         if(!batch_size) {
@@ -405,8 +405,8 @@ void delayControl::run()
         //output a debug image
         if(debugPort.getOutputCount()) {
 
-            //static double prev_likelihood = vpf.maxlikelihood;
-            static int NOFPANELS = 3;
+            static double prev_likelihood = vpf.maxlikelihood;
+            static int NOFPANELS = 1;
 
             static yarp::sig::ImageOf< yarp::sig::PixelBgr> *image_ptr = 0;
             static int panelnumber = NOFPANELS;
@@ -416,11 +416,12 @@ void delayControl::run()
             //if we are in waiting state, check trigger condition
             bool trigger_capture = false;
             if(panelnumber >= NOFPANELS) {
-                //trigger_capture = prev_likelihood > detectionThreshold &&
-                 //       vpf.maxlikelihood <= detectionThreshold;
-                trigger_capture = yarp::os::Time::now() - pimagetime > 0.1;
+                 trigger_capture = prev_likelihood > detectionThreshold &&
+                         vpf.maxlikelihood <= detectionThreshold;
+                //trigger_capture = yarp::os::Time::now() - pimagetime > 0.1;
+                //trigger_capture = true;
             }
-            //prev_likelihood = vpf.maxlikelihood;
+            prev_likelihood = vpf.maxlikelihood;
 
             //if we are in waiting state and
             if(trigger_capture) {
@@ -439,10 +440,10 @@ void delayControl::run()
                 yarp::sig::ImageOf<yarp::sig::PixelBgr> &image = *image_ptr;
                 int panoff = panelnumber * res.width;
 
-                int px1 = avgx - roisize; if(px1 < 0) px1 = 0;
-                int px2 = avgx + roisize; if(px2 >= res.width) px2 = res.width-1;
-                int py1 = avgy - roisize; if(py1 < 0) py1 = 0;
-                int py2 = avgy + roisize; if(py2 >= res.height) py2 = res.height-1;
+                int px1 = avgx - roisize - 30; if(px1 < 0) px1 = 0;
+                int px2 = avgx + roisize + 30; if(px2 >= res.width) px2 = res.width-1;
+                int py1 = avgy - roisize - 10; if(py1 < 0) py1 = 0;
+                int py2 = avgy + roisize + 10; if(py2 >= res.height) py2 = res.height-1;
 
                 px1 += panoff; px2 += panoff;
                 for(int x = px1; x <= px2; x+=2) {
