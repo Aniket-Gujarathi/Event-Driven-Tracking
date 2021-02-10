@@ -204,7 +204,7 @@ public:
         //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
         double sqrd_par = pcb->queryDistance((int)dy, (int)dx);
         double fsqrd_par = std::fabs(sqrd_par);
-        double sqrd_dir = y - (vy - 2*(r / 4.0));
+        double sqrd_dir = y - (vy - 2 * (r / 4.0));
         double fsqrd_dir = std::fabs(sqrd_par);
 
 
@@ -213,6 +213,7 @@ public:
 
         //OPTION 2
         double fsqrd = std::fabs(fsqrd_dir - fsqrd_par);
+        
         if(fsqrd > 1.0 + inlierParameter)
             return;
 
