@@ -17,6 +17,10 @@
  */
 
 #include "vControlLoopDelay.h"
+#include <opencv2/core/core.hpp>
+#include <opencv2/opencv.hpp>
+#include <yarp/cv/Cv.h>
+using namespace cv;
 
 int main(int argc, char * argv[])
 {
@@ -470,7 +474,10 @@ void delayControl::run()
 
                 }
                 drawEvents(image, qROI.q, panoff);
+                cv::Mat cvImg = yarp::cv::toCvMat(image);
 
+                cv::imshow("debug_img", cvImg);
+                cv::waitKey(0);
                 panelnumber++;
             }
 
@@ -484,7 +491,6 @@ void delayControl::run()
     }
 
 }
-
 
 #define CMD_HELP  createVocab('h', 'e', 'l', 'p')
 #define CMD_SET   createVocab('s', 'e', 't')
