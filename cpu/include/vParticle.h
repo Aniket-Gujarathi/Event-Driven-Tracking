@@ -203,9 +203,10 @@ public:
         //double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
         //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
         double sqrd_par = pcb->queryDistance((int)dy, (int)dx);
+        //double sqrd_par = sqrt(pow(dx, 2.0) + pow(dy, 2.0));
         double fsqrd_par = std::fabs(sqrd_par);
         double sqrd_dir = y - (vy - 2 * (r / 4.0));
-        double fsqrd_dir = std::fabs(sqrd_par);
+        double fsqrd_dir = std::fabs(sqrd_dir);
 
 
         //int a = 0.5 + (angbuckets-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
@@ -213,7 +214,7 @@ public:
 
         //OPTION 2
         double fsqrd = std::fabs(fsqrd_dir - fsqrd_par);
-        
+
         if(fsqrd > 1.0 + inlierParameter)
             return;
 
