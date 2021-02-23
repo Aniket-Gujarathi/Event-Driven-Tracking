@@ -21,6 +21,7 @@
 
 #include <event-driven/all.h>
 #include <yarp/sig/all.h>
+// #include "yarp/os/LogStream.h"
 
 using namespace ev;
 
@@ -207,7 +208,8 @@ public:
         double fsqrd_par = std::fabs(sqrd_par);
         double sqrd_dir = y - (vy - 2 * (r / 4.0));
         double fsqrd_dir = std::fabs(sqrd_dir);
-
+        // yDebug()<<"dist from par" << fsqrd_par << "dir dist" << fsqrd_dir;
+        // yDebug() << "states" << x, y, r;
 
         //int a = 0.5 + (angbuckets-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
         int a = pcb->queryBinNumber((int)dy, (int)dx);
@@ -233,8 +235,8 @@ public:
                     nw = n;
                 }
             }
-        } else {
             score -= negativeScaler;
+        } else {
         }
 
         return;

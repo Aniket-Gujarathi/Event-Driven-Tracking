@@ -17,7 +17,7 @@
  */
 
 #include "vControlLoopDelay.h"
-
+#include "yarp/os/LogStream.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <yarp/cv/Cv.h>
@@ -249,11 +249,12 @@ void delayControl::run()
     const vector<AE> *q = input_port.read(ystamp);
     if(!q || Thread::isStopping()) return;
     vpf.extractTargetPosition(avgx, avgy, avgr);
+    // std::cout << "-----check avgr----" << avgr << std::endl;
 
     channel = q->front().getChannel();
 
     while(true) {
-
+        // yDebug()<<"----------------started--------------------";
         //calculate error
         double delay = input_port.queryDelayT();
         unsigned int unprocdqs = input_port.queryunprocessed();
@@ -430,6 +431,7 @@ void delayControl::run()
 
             //if we are in waiting state and
             if(trigger_capture) {
+                yDebug() << "-----check avgr----"<< avgr;
                 //trigger the capture of the panels only if we aren't already
                 pimagetime = yarp::os::Time::now();
                 yarp::sig::ImageOf< yarp::sig::PixelBgr> &image_ref =
@@ -481,25 +483,28 @@ void delayControl::run()
 
                 for (int i = px1; i < px2; i++){
                   // list_point[i].y = i;
-                  double y_par = (pow((i - avgx), 2) / avgr) + avgy;
+                  double y_par = (pow((i - avgx), 2) / (avgr)) + avgy;
                   double x_par = i;
                   // list_point[i].x = x_par * x_par;
-                  Point2f newPt = Point2f(x_par, y_par);
-                  list_point.push_back(newPt);
+                  if (y_par > py1 && y_par < py2){
+                    Point2f newPt = Point2f(x_par, y_par);
+                    list_point.push_back(newPt);
+                  }
+
                 }
                 Mat curve(list_point, true);
                 curve.convertTo(curve, CV_32S);
                 polylines(cvImg, curve, false, Scalar(255, 255, 255), 2, CV_AA);
 
-                cv::imshow("debug_img", cvImg);
-                cv::waitKey(1);
+                // cv::imshow("debug_img", cvImg);
+                // cv::waitKey(1);
 
                 panelnumber++;
             }
 
             if(panelnumber == NOFPANELS) {
                 panelnumber++;
-                // debugPort.write();
+                debugPort.write();
             }
 
         }
