@@ -62,6 +62,7 @@ public:
     {
         rows = (height + maxrad) * 2 + 1;
         cols = (width + maxrad) * 2 + 1;
+        
         offsety = rows/2;
         offsetx = cols/2;
 
@@ -72,7 +73,7 @@ public:
 
                 int dy = i - offsety;
                 int dx = j - offsetx;
-
+                
                 ds(i, j) = sqrt(pow(dx, 2.0) + pow(dy, 2.0));
                 bs(i, j) = (nBins-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
 
@@ -204,8 +205,8 @@ public:
         //double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
         //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
         double sqrd_par = pcb->queryDistance((int)dy, (int)dx);
-        //double sqrd_par = sqrt(pow(dx, 2.0) + pow(dy, 2.0));
         double fsqrd_par = std::fabs(sqrd_par);
+
         double sqrd_dir = y - (vy - 2 * (r / 4.0));
         double fsqrd_dir = std::fabs(sqrd_dir);
         // yDebug()<<"dist from par" << fsqrd_par << "dir dist" << fsqrd_dir;
@@ -214,17 +215,33 @@ public:
         //int a = 0.5 + (angbuckets-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
         int a = pcb->queryBinNumber((int)dy, (int)dx);
 
-        //OPTION 2
-        double fsqrd = std::fabs(fsqrd_dir - fsqrd_par);
-
-        if(fsqrd > 1.0 + inlierParameter)
+        // OPTION Parabola
+        double fsqrd_diff = std::fabs(fsqrd_dir - fsqrd_par);
+        double cval = 0;
+        if(fsqrd_diff > 1.0 + inlierParameter)
             return;
 
-        double cval = 0;
-        if(fsqrd < 1.0)
-            cval = 1.0;
-        else if(fsqrd < 1.0 + inlierParameter)
-            cval = (1.0 + inlierParameter - fsqrd) / inlierParameter;
+        if (fsqrd_dir < fsqrd_par){
+            yDebug() << "less" << fsqrd_dir << fsqrd_par;
+            score -= negativeScaler;
+        }
+        else if(fsqrd_par < fsqrd_dir){
+            cval = 1;
+        }
+
+
+        //OPTION 2
+        // double fsqrd = std::fabs(fsqrd_dir - fsqrd_par);
+
+        // if(fsqrd > 1.0 + inlierParameter)
+        //     return;
+
+        // double cval = 0;
+        // if(fsqrd < 1.0)
+        //     cval = 1.0;
+        // else if(fsqrd < 1.0 + inlierParameter)
+        //     cval = (1.0 + inlierParameter - fsqrd) / inlierParameter;
+        
         if(cval) {
             double improve = cval - angdist[a];
             if(improve > 0) {
