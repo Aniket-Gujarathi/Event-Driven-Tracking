@@ -126,11 +126,13 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
                    rf.check("negbias", yarp::os::Value(10.0)).asDouble());
 
     yarp::os::Bottle * seed = rf.find("seed").asList();
-    if(seed && seed->size() == 3) {
+    if(seed && seed->size() == 5) {
         yInfo() << "Setting initial seed state:" << seed->toString();
         vpf.setSeed(seed->get(0).asDouble(),
                     seed->get(1).asDouble(),
-                    seed->get(2).asDouble());
+                    seed->get(2).asDouble(),
+                    seed->get(3).asDouble(),
+                    seed->get(4).asDouble());
         vpf.resetToSeed();
     }
 
@@ -183,17 +185,17 @@ void delayControl::setTrueThreshold(double value)
     detectionThreshold = value * maxRawLikelihood;
 }
 
-void delayControl::performReset(int x, int y, int r)
+void delayControl::performReset(int x, int y, int r, int theta, int c)
 {
     if(x > 0)
-        vpf.setSeed(x, y, r);
+        vpf.setSeed(x, y, r, theta, c);
     vpf.resetToSeed();
     input_port.resume();
 }
 
 yarp::sig::Vector delayControl::getTrackingStats()
 {
-    yarp::sig::Vector stats(10);
+    yarp::sig::Vector stats(12);
 
     stats[0] = 1000*input_port.queryDelayT();
     stats[1] = 1.0/filterPeriod;
@@ -205,6 +207,8 @@ yarp::sig::Vector delayControl::getTrackingStats()
     stats[7] = vpf.maxlikelihood / (double)maxRawLikelihood;
     stats[8] = cpuusage.getProcessorUsage();
     stats[9] = qROI.n;
+    stats[10] = dtheta;
+    stats[11] = dc;
 
     return stats;
 }
@@ -248,7 +252,7 @@ void delayControl::run()
     //START HERE!!
     const vector<AE> *q = input_port.read(ystamp);
     if(!q || Thread::isStopping()) return;
-    vpf.extractTargetPosition(avgx, avgy, avgr);
+    vpf.extractTargetPosition(avgx, avgy, avgr, avgtheta, avgc);
     // std::cout << "-----check avgr----" << avgr << std::endl;
 
     channel = q->front().getChannel();
@@ -302,9 +306,9 @@ void delayControl::run()
         Tlikelihood = yarp::os::Time::now() - Tlikelihood;
 
         //set our new position
-        dx = avgx, dy = avgy, dr = avgr;
-        vpf.extractTargetPosition(avgx, avgy, avgr);
-        dx = avgx - dx; dy = avgy - dy; dr = avgr - dr;
+        dx = avgx, dy = avgy, dr = avgr, dtheta=avgtheta, dc = avgc;
+        vpf.extractTargetPosition(avgx, avgy, avgr, avgtheta, avgc);
+        dx = avgx - dx; dy = avgy - dy; dr = avgr - dr; dtheta = avgtheta - dtheta; dc = avgc - dc;
         double roisize = avgr + 10;
         qROI.setROI(avgx - roisize, avgx + roisize, avgy - roisize, avgy + roisize);
 
@@ -359,6 +363,8 @@ void delayControl::run()
             px = avgx;
             py = avgy;
             pr = avgr;
+            ptheta = avgtheta;
+            pc = avgc;
             //output our event
             if(event_output_port.getOutputCount()) {
                 auto ceg = make_event<GaussianAE>();
@@ -389,6 +395,8 @@ void delayControl::run()
                 next_sample.addDouble(avgx);
                 next_sample.addDouble(avgy);
                 next_sample.addDouble(avgr);
+                next_sample.addDouble(avgtheta);
+                next_sample.addDouble(avgc);
                 next_sample.addDouble(channel);
                 next_sample.addDouble(tw);
                 next_sample.addDouble(vpf.maxlikelihood);
@@ -399,9 +407,6 @@ void delayControl::run()
 
 
         }
-
-
-
 
 
         static double prev_update_time = Tgetwindow;
@@ -431,7 +436,7 @@ void delayControl::run()
 
             //if we are in waiting state and
             if(trigger_capture) {
-                yDebug() << "-----check avgr----"<< avgr;
+                // yDebug() << "-----check avgr----"<< avgr;
                 //trigger the capture of the panels only if we aren't already
                 pimagetime = yarp::os::Time::now();
                 yarp::sig::ImageOf< yarp::sig::PixelBgr> &image_ref =
@@ -482,14 +487,19 @@ void delayControl::run()
                 vector <Point2f> list_point;
 
                 for (int i = px1; i < px2; i++){
-                  // list_point[i].y = i;
-                  double y_par = (pow((i - avgx), 2) / (avgr)) + avgy;
-                  double x_par = i;
-                  // list_point[i].x = x_par * x_par;
-                  if (y_par > py1 && y_par < py2){
-                    Point2f newPt = Point2f(x_par, y_par);
-                    list_point.push_back(newPt);
-                  }
+                    
+                    // double y_par = (pow((i - avgx), 2) / (avgr)) + avgy;
+                    double m = tan(avgtheta);
+                    double y_par = delayControl::findRoots((m*m), (-2*avgy*(1 + m*m) + 2*avgc + 2*m*i), (i*i + i*(-2*avgx*(1 + m*m) - 2*m*avgc) + (avgx*avgx + avgy*avgy)*(1 + m*m) - avgc*avgc));
+                    if (y_par == NULL){
+                        continue;
+                    }
+                    double x_par = i;
+                    
+                    if (y_par > py1 && y_par < py2){
+                        Point2f newPt = Point2f(x_par, y_par);
+                        list_point.push_back(newPt);
+                    }
 
                 }
                 Mat curve(list_point, true);

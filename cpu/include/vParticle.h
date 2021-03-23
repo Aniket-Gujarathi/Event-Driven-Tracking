@@ -21,7 +21,6 @@
 
 #include <event-driven/all.h>
 #include <yarp/sig/all.h>
-// #include "yarp/os/LogStream.h"
 
 using namespace ev;
 
@@ -139,6 +138,8 @@ private:
     int minx, maxx;
     int miny, maxy;
     int minr, maxr;
+    int mintheta, maxtheta;
+    int minc, maxc;
 
     //temporary parameters (on update cycle)
     double likelihood;
@@ -153,6 +154,8 @@ private:
     double x;
     double y;
     double r;
+    double theta;
+    double c;
 
     double weight;
 
@@ -169,13 +172,13 @@ public:
     void updateMinLikelihood(double value);
     void attachPCB(preComputedBins *pcb) { this->pcb = pcb; }
 
-    void initialiseState(double x, double y, double r);
-    void randomise(int x, int y, int r);
+    void initialiseState(double x, double y, double r, double theta, double c);
+    void randomise(int x, int y, int r, int theta, int c);
 
     void resetWeight(double value);
     void resetRadius(double value);
     void resetArea();
-    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr);
+    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc);
     void checkConstraints();
     void setNegativeBias(double value);
     void setInlierParameter(double value);
@@ -207,10 +210,11 @@ public:
         double sqrd_par = pcb->queryDistance((int)dy, (int)dx);
         double fsqrd_par = std::fabs(sqrd_par);
 
-        double sqrd_dir = y - (vy - 2 * (r / 4.0));
+        // double sqrd_dir = y - (vy - 2 * (r / 4.0));
+        double sqrd_dir = (tan(theta*(M_PI / 180))*x - y + c) / (sqrt(1 + pow(tan(theta), 2)));
         double fsqrd_dir = std::fabs(sqrd_dir);
-        // yDebug()<<"dist from par" << fsqrd_par << "dir dist" << fsqrd_dir;
-        // yDebug() << "states" << x, y, r;
+        // yDebug()<< "theta" << tan(theta*(M_PI / 180));
+        // yDebug() << "states" << theta;
 
         //int a = 0.5 + (angbuckets-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
         int a = pcb->queryBinNumber((int)dy, (int)dx);
@@ -222,7 +226,7 @@ public:
             return;
 
         if (fsqrd_dir < fsqrd_par){
-            yDebug() << "less" << fsqrd_dir << fsqrd_par;
+            // yDebug() << "less" << fsqrd_dir << fsqrd_par;
             score -= negativeScaler;
         }
         else if(fsqrd_par < fsqrd_dir){
@@ -301,6 +305,8 @@ public:
     inline double getx()  { return x; }
     inline double gety()  { return y; }
     inline double getr()  { return r; }
+    inline double gettheta()  { return theta; }
+    inline double getc()  { return c; }
     inline double getw()  { return weight; }
     inline double getl()  { return likelihood; }
     inline double getnw() { return nw; }
@@ -349,7 +355,7 @@ private:
     ev::resolution res;
     bool adaptive;
     int bins;
-    int seedx, seedy, seedr;
+    int seedx, seedy, seedr, seedtheta, seedc;
     double nRandoms;
 
     //data
@@ -363,6 +369,10 @@ private:
     double pwsumsq;
     int rbound_min;
     int rbound_max;
+    int theta_min;
+    int theta_max;
+    int c_min;
+    int c_max;
 
 public:
 
@@ -374,7 +384,7 @@ public:
                     int bins, bool adaptive, int nthreads, double minlikelihood,
                     double inlierThresh, double randoms, double negativeBias);
 
-    void setSeed(int x, int y, int r = 0);
+    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0);
     void resetToSeed();
     void setMinLikelihood(double value);
     void setInlierParameter(double value);
@@ -382,7 +392,7 @@ public:
     void setAdaptive(bool value = true);
 
     void performObservation(const deque<AE> &q);
-    void extractTargetPosition(double &x, double &y, double &r);
+    void extractTargetPosition(double &x, double &y, double &r, double &theta, double &c);
     void extractTargetWindow(double &tw);
     void performResample();
     void performPrediction(double sigma);

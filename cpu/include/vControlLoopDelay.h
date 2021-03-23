@@ -21,7 +21,7 @@
 
 #include <yarp/os/all.h>
 #include <yarp/sig/Vector.h>
-#include <event-driven//all.h>
+#include <event-driven/all.h>
 #include "vParticle.h"
 
 using namespace ev;
@@ -66,7 +66,7 @@ private:
 
     //variables
     resolution res;
-    double avgx, avgy, avgr;
+    double avgx, avgy, avgr, avgtheta, avgc;
     int maxRawLikelihood;
     double gain;
     int detectionThreshold;
@@ -81,7 +81,9 @@ private:
     double dx;
     double dy;
     double dr;
-    double px, py, pr;
+    double dtheta;
+    double dc;
+    double px, py, pr, ptheta, pc;
     ev::benchmark cpuusage;
     BufferedPort< ImageOf<PixelBgr> > debugPort;
 
@@ -97,8 +99,8 @@ public:
     virtual bool respond(const yarp::os::Bottle& command, yarp::os::Bottle& reply);
 
     bool open(std::string name, unsigned int qlimit = 0);
-    void performReset(int x = -1, int y = -1, int r = -1);
-    void setFilterInitialState(int x, int y, int r);
+    void performReset(int x = -1, int y = -1, int r = -1, int theta = -1, int c = -1);
+    void setFilterInitialState(int x, int y, int r, int theta, int c);
 
     void setMinRawLikelihood(double value);
     void setMaxRawLikelihood(int value);
@@ -112,6 +114,31 @@ public:
     void setGain(double value);
     void setMinToProc(int value);
     void setResetTimeout(double value);
+
+    double findRoots(double a, double b, double c)
+    {
+        
+        if (a == 0) {
+            // yDebug() << "Invalid";
+            return NULL;
+        }
+    
+        int d = b * b - 4 * a * c;
+        double sqrt_val = sqrt(abs(d));
+    
+        if (d > 0) {
+            return (double)(-b - sqrt_val) / (2 * a);
+        }
+        else if (d == 0) {
+            return -(double)b / (2 * a);
+        }
+        else // d < 0
+        {
+            // yDebug() << "Complex";
+            return NULL;
+        }
+    }
+
 
     yarp::sig::Vector getTrackingStats();
 
