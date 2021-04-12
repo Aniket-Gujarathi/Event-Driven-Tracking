@@ -16,7 +16,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "vControlLoopDelay_inclPar.h"
+#include "vControlLoopDelay_comb.h"
 #include "yarp/os/LogStream.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
@@ -39,7 +39,7 @@ int main(int argc, char * argv[])
     yarp::os::ResourceFinder rf;
     rf.setVerbose( true );
     rf.setDefaultContext( "event-driven" );
-    rf.setDefaultConfigFile( "vParticleFilterTracker.ini" );
+    rf.setDefaultConfigFile( "vParticleFilterTracker_comb.ini" );
     rf.configure( argc, argv );
 
     return instance.runModule(rf);
@@ -484,6 +484,7 @@ void delayControl::run()
                 drawEvents(image, qROI.q, panoff);
 
                 cv::Mat cvImg = yarp::cv::toCvMat(image);
+                
                 vector <Point2f> list_point;
 
                 for (int i = px1; i < px2; i++){
@@ -495,17 +496,16 @@ void delayControl::run()
                         continue;
                     }
                     double x_par = i;
-                    
                     if (y_par > py1 && y_par < py2){
                         Point2f newPt = Point2f(x_par, y_par);
                         list_point.push_back(newPt);
-                    }
+                      }
 
                 }
                 Mat curve(list_point, true);
                 curve.convertTo(curve, CV_32S);
                 polylines(cvImg, curve, false, Scalar(255, 255, 255), 2, CV_AA);
-
+                cv::circle(cvImg, Point(avgx, avgy), avgr, (255, 255, 255), 2);
                 panelnumber++;
             }
 

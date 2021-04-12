@@ -153,7 +153,7 @@ private:
     //state and weight
     double x;
     double y;
-    double r;
+    double r; //circle rad
     double theta;
     double c;
 
@@ -205,6 +205,9 @@ public:
         double dx = vx - x;
         double dy = vy - y;
 
+        double dist_circ = pcb->queryDistance((int)dy, (int)dx) - r;
+        double fdist_circ = std::fabs(dist_circ);
+
         double dist_par = pcb->queryDistance((int)dy, (int)dx);
         double fdist_par = std::fabs(dist_par);
 
@@ -218,16 +221,17 @@ public:
         int a = pcb->queryBinNumber((int)dy, (int)dx);
 
         double cval = 0;
-        if(fdist_par > 4.0)
+        if(fdist_par > 4.0 || dist_circ > 1.0 + inlierParameter)
             return;
-        else if(fdist_dir >= fdist_par)
+        else if(fdist_dir == fdist_par || fdist_circ < 1.0)
             cval = 1.0;
         else if (fdist_dir < fdist_par){
-            cval = -1.0;
+            cval = -0.5;
         }
+        else if(fdist_dir > fdist_par || fdist_circ < 1.0 + inlierParameter)
+            cval = 0.5;
         
         if(cval) {
-            yDebug() << "cval" << cval;
             double improve = cval - angdist[a];
             if(improve > 0) {
                 angdist[a] = cval;

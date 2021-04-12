@@ -16,7 +16,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "vParticle_inclPar.h"
+#include "vParticle_comb.h"
 #include <cmath>
 #include <limits>
 #include <algorithm>
@@ -357,7 +357,7 @@ void vParticlefilter::resetToSeed()
         }
     } else {
         for(int i = 0; i < nparticles; i++) {
-            ps[i].initialiseState(220, 110, 50, 6, 80);
+            ps[i].initialiseState(220, 180, 30, 6, 80);
         }
     }
 }
