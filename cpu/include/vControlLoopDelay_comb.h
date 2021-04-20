@@ -66,7 +66,7 @@ private:
 
     //variables
     resolution res;
-    double avgx, avgy, avgr, avgtheta, avgc;
+    double avgx, avgy, avgr, avgtheta, avgc, avgxc, avgyc;
     int maxRawLikelihood;
     double gain;
     int detectionThreshold;
@@ -82,8 +82,8 @@ private:
     double dy;
     double dr;
     double dtheta;
-    double dc;
-    double px, py, pr, ptheta, pc;
+    double dc, dxc, dyc;
+    double px, py, pr, ptheta, pc, pxc, pyc;
     ev::benchmark cpuusage;
     BufferedPort< ImageOf<PixelBgr> > debugPort;
 
@@ -99,8 +99,8 @@ public:
     virtual bool respond(const yarp::os::Bottle& command, yarp::os::Bottle& reply);
 
     bool open(std::string name, unsigned int qlimit = 0);
-    void performReset(int x = -1, int y = -1, int r = -1, int theta = -1, int c = -1);
-    void setFilterInitialState(int x, int y, int r, int theta, int c);
+    void performReset(int x = -1, int y = -1, int r = -1, int theta = -1, int c = -1, int xc = -1, int yc = -1);
+    void setFilterInitialState(int x, int y, int r, int theta, int c, int xc, int yc);
 
     void setMinRawLikelihood(double value);
     void setMaxRawLikelihood(int value);

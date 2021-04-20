@@ -192,22 +192,26 @@ vParticle& vParticle::operator=(const vParticle &rhs)
     this->r = rhs.r;
     this->theta = rhs.theta;
     this->c = rhs.c;
+    this->xc = rhs.xc;
+    this->yc = rhs.yc;
     this->weight = rhs.weight;
     return *this;
 }
 
-void vParticle::initialiseState(double x, double y, double r, double theta, double c)
+void vParticle::initialiseState(double x, double y, double r, double theta, double c, double xc, double yc)
 {
     this->x = x;
     this->y = y;
     this->r = r;
     this->theta = theta;
     this->c = c;
+    this->xc = xc;
+    this->yc = yc;
 }
 
-void vParticle::randomise(int x, int y, int r, int theta, int c)
+void vParticle::randomise(int x, int y, int r, int theta, int c, int xc, int yc)
 {
-    initialiseState(rand()%x, rand()%y, rand()%r, rand()%theta, rand()%c);
+    initialiseState(rand()%x, rand()%y, rand()%r, rand()%theta, rand()%c, rand()%xc, rand()%yc);
 }
 
 void vParticle::resetWeight(double value)
@@ -248,11 +252,13 @@ void vParticle::predict(double sigma)
     r = generateUniformNoise(r, sigma * 0.2);
     theta = generateUniformNoise(theta, sigma * 0.2);
     c = generateUniformNoise(c, sigma * 0.2);
+    xc = generateUniformNoise(xc, sigma);
+    yc = generateUniformNoise(yc, sigma);
 
     if(constrain) checkConstraints();
 }
 
-void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc)
+void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc, int minxc, int maxxc, int minyc, int maxyc)
 {
     this->minx = minx;
     this->maxx = maxx;
@@ -264,6 +270,10 @@ void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int minr, 
     this->maxtheta = maxtheta;
     this->minc = minc;
     this->maxc = maxc;
+    this->minxc = minxc;
+    this->maxxc = maxxc;
+    this->minyc = minyc;
+    this->maxyc = maxyc;
     constrain = true;
 }
 void vParticle::checkConstraints()
@@ -278,6 +288,10 @@ void vParticle::checkConstraints()
     if(theta > maxtheta) theta = maxtheta;
     if(c < minc) c = minc;
     if(c > maxc) c = maxc;
+    if(xc < minxc) xc = minxc;
+    if(xc > maxxc) xc = maxxc;
+    if(yc < minyc) yc = minyc;
+    if(yc > maxyc) yc = maxyc;
 }
 
 
@@ -304,12 +318,12 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     this->adaptive = adaptive;
     this->nthreads = nthreads;
     this->nRandoms = randoms + 1.0;
-    rbound_min = res.width/15;
-    rbound_max = res.width;
+    rbound_min = res.width/31;
+    rbound_max = res.width/10;
     theta_min = -10;
     theta_max = 10;
-    c_min = -res.height / 6;
-    c_max = res.height / 6;
+    c_min = -res.height/2.0;
+    c_max = res.height/2.0;
     pcb.configure(res.height, res.width, rbound_max, bins);
     setSeed(res.width/2.0, res.height/2.0);
 
@@ -334,7 +348,7 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     vParticle p;
     p.attachPCB(&pcb);
     p.resetWeight(1.0/nparticles);
-    p.setContraints(0, res.width, 0, res.height, rbound_min, rbound_max, theta_min, theta_max, c_min, c_max);
+    p.setContraints(0, res.width, 0, res.height, rbound_min, rbound_max, theta_min, theta_max, c_min, c_max, xc_min, xc_max, yc_min, yc_max);
     for(int i = 0; i < this->nparticles; i++) {
         p.initialiseParameters(i, minlikelihood, negativeBias, inlierThresh, 0, bins);
         ps.push_back(p);
@@ -344,20 +358,20 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     resetToSeed();
 }
 
-void vParticlefilter::setSeed(int x, int y, int r, int theta, int c)
+void vParticlefilter::setSeed(int x, int y, int r, int theta, int c, int xc, int yc)
 {
-    seedx = x; seedy = y; seedr = r; seedtheta = theta; seedc = c;
+    seedx = x; seedy = y; seedr = r; seedtheta = theta; seedc = c; seedxc = xc; seedyc = yc;
 }
 
 void vParticlefilter::resetToSeed()
 {
     if(seedr) {
         for(int i = 0; i < nparticles; i++) {
-            ps[i].initialiseState(seedx, seedy, seedr, seedtheta, seedc);
+            ps[i].initialiseState(seedx, seedy, seedr, seedtheta, seedc, seedxc, seedyc);
         }
     } else {
         for(int i = 0; i < nparticles; i++) {
-            ps[i].initialiseState(220, 180, 30, 6, 80);
+            ps[i].initialiseState(220, 110, 30, 6, 80, 220, 180);
         }
     }
 }
@@ -401,7 +415,7 @@ void vParticlefilter::performObservation(const deque<AE> &q)
                 ps[i].incrementalLikelihood(q[j].x, q[j].y, j);
             }
         }
-
+            
         for(int i = 0; i < nparticles; i++) {
             ps[i].concludeLikelihood();
             normval += ps[i].getw();
@@ -429,9 +443,9 @@ void vParticlefilter::performObservation(const deque<AE> &q)
 
 }
 
-void vParticlefilter::extractTargetPosition(double &x, double &y, double &r, double &theta, double &c)
+void vParticlefilter::extractTargetPosition(double &x, double &y, double &r, double &theta, double &c, double &xc, double &yc)
 {
-    x = 0; y = 0; r = 0; theta = 0; c = 0;
+    x = 0; y = 0; r = 0; theta = 0; c = 0; xc = 0; yc = 0;
 
     for(int i = 0; i < nparticles; i++) {
         double w = ps[i].getw();
@@ -440,6 +454,8 @@ void vParticlefilter::extractTargetPosition(double &x, double &y, double &r, dou
         r += ps[i].getr() * w;
         theta += ps[i].gettheta() * w;
         c += ps[i].getc() * w;
+        xc += ps[i].getxc() * w;
+        yc += ps[i].getyc() * w;
     }
 }
 
@@ -470,7 +486,7 @@ void vParticlefilter::performResample()
         for(int i = 0; i < nparticles; i++) {
             double rn = nRandoms * (double)rand() / RAND_MAX;
             if(rn > 1.0){
-                ps[i].randomise(res.width, res.height, rbound_max, theta_max, c_max);
+                ps[i].randomise(res.width, res.height, rbound_max, theta_max, c_max, res.width, res.height);
             }
             else {
                 int j = 0;

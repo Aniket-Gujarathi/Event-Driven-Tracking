@@ -140,6 +140,7 @@ private:
     int minr, maxr;
     int mintheta, maxtheta;
     int minc, maxc;
+    int minxc, maxxc, minyc, maxyc;
 
     //temporary parameters (on update cycle)
     double likelihood;
@@ -156,6 +157,9 @@ private:
     double r; //circle rad
     double theta;
     double c;
+    //circle
+    double xc;
+    double yc;
 
     double weight;
 
@@ -172,13 +176,13 @@ public:
     void updateMinLikelihood(double value);
     void attachPCB(preComputedBins *pcb) { this->pcb = pcb; }
 
-    void initialiseState(double x, double y, double r, double theta, double c);
-    void randomise(int x, int y, int r, int theta, int c);
+    void initialiseState(double x, double y, double r, double theta, double c, double xc, double yc);
+    void randomise(int x, int y, int r, int theta, int c, int xc, int yc);
 
     void resetWeight(double value);
     void resetRadius(double value);
     void resetArea();
-    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc);
+    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc, int minxc, int maxxc, int minyc, int maxyc);
     void checkConstraints();
     void setNegativeBias(double value);
     void setInlierParameter(double value);
@@ -186,7 +190,7 @@ public:
 
     //update
     void predict(double sigma);
-    double approxatan2(double y, double x);
+    double approxatan2(double yc, double xc);
 
     void initLikelihood(int windowSize)
     {
@@ -202,41 +206,51 @@ public:
 
     inline void incrementalLikelihood(int vx, int vy, int n)
     {
+        // parabola
         double dx = vx - x;
         double dy = vy - y;
+        // circle
+        double dxc = vx - xc;
+        double dyc = vy - yc;
 
-        double dist_circ = pcb->queryDistance((int)dy, (int)dx) - r;
+        // distance between the circle centre and parabola focus
+        double dist_centres = std::fabs(pcb->queryDistance((yc - y), (xc - x)));
+        
+        // distance between the parabola and directrix (2 * a)
+        double dist_par_dir = std::fabs((tan(theta*(M_PI / 180))*x - y + c) / (sqrt(1 + pow(tan(theta*(M_PI / 180)), 2)))) / 2.0;
+
+        // distance from circle (boundary)
+        double dist_circ = pcb->queryDistance((int)dyc, (int)dxc) - r;
         double fdist_circ = std::fabs(dist_circ);
 
-        double dist_par = pcb->queryDistance((int)dy, (int)dx);
-        double fdist_par = std::fabs(dist_par);
-
-        // double sqrd_dir = vy - (y - 2 * (r / 4.0)); // For straight parabola
+        // distance from focus
+        double dist_focus = pcb->queryDistance((int)dy, (int)dx);
+        double fdist_focus = std::fabs(dist_focus);
         
-        double dist_dir = (tan(theta*(M_PI / 180))*vx - vy + c) / (sqrt(1 + pow(tan(theta*(M_PI / 180)), 2)));
-        double fdist_dir = std::fabs(dist_dir);
+        // distance from directrix
+        double dist_directrix = (tan(theta*(M_PI / 180))*vx - vy + c) / (sqrt(1 + pow(tan(theta*(M_PI / 180)), 2)));
+        double fdist_directrix = std::fabs(dist_directrix);
 
-        double fdiff = std::fabs(fdist_dir - fdist_par);
-
-        int a = pcb->queryBinNumber((int)dy, (int)dx);
-
+        int a = pcb->queryBinNumber((int)dyc, (int)dxc);
+   
         double cval = 0;
-        if(fdist_par > 4.0 || dist_circ > 1.0 + inlierParameter)
+        if(fdist_focus > 5.0 || dist_par_dir < 5.0)
             return;
-        else if(fdist_dir == fdist_par || fdist_circ < 1.0)
+        else if(fdist_directrix == fdist_focus || fdist_circ <= 1.0)
             cval = 1.0;
-        else if (fdist_dir < fdist_par){
-            cval = -0.5;
-        }
-        else if(fdist_dir > fdist_par || fdist_circ < 1.0 + inlierParameter)
+        else if (fdist_directrix < 2.0 || fdist_focus > 2.0)
+            cval = -1.0;
+        else if(fdist_directrix > fdist_focus)
             cval = 0.5;
         
         if(cval) {
-            double improve = cval - angdist[a];
+            // double improve = cval - angdist[a];
+            double improve = cval;
             if(improve > 0) {
-                angdist[a] = cval;
+                // angdist[a] = cval;
                 score += improve;
                 if(score >= likelihood) {
+                    // yDebug() << score << likelihood;
                     likelihood = score;
                     nw = n;
                 }
@@ -324,6 +338,8 @@ public:
     inline double getr()  { return r; }
     inline double gettheta()  { return theta; }
     inline double getc()  { return c; }
+    inline double getxc()  { return xc; }
+    inline double getyc()  { return yc; }
     inline double getw()  { return weight; }
     inline double getl()  { return likelihood; }
     inline double getnw() { return nw; }
@@ -372,7 +388,7 @@ private:
     ev::resolution res;
     bool adaptive;
     int bins;
-    int seedx, seedy, seedr, seedtheta, seedc;
+    int seedx, seedy, seedr, seedtheta, seedc, seedxc, seedyc;
     double nRandoms;
 
     //data
@@ -390,6 +406,7 @@ private:
     int theta_max;
     int c_min;
     int c_max;
+    int xc_min, xc_max, yc_min, yc_max;
 
 public:
 
@@ -401,7 +418,7 @@ public:
                     int bins, bool adaptive, int nthreads, double minlikelihood,
                     double inlierThresh, double randoms, double negativeBias);
 
-    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0);
+    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0, int xc = 220, int yc = 160);
     void resetToSeed();
     void setMinLikelihood(double value);
     void setInlierParameter(double value);
@@ -409,7 +426,7 @@ public:
     void setAdaptive(bool value = true);
 
     void performObservation(const deque<AE> &q);
-    void extractTargetPosition(double &x, double &y, double &r, double &theta, double &c);
+    void extractTargetPosition(double &x, double &y, double &r, double &theta, double &c, double &xc, double &yc);
     void extractTargetWindow(double &tw);
     void performResample();
     void performPrediction(double sigma);
