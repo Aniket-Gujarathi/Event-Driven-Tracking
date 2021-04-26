@@ -65,6 +65,10 @@ public:
         offsety = rows/2;
         offsetx = cols/2;
 
+        // std::vector<double> bins;
+        // int k = 5;
+        // bins.resize(2 * k);
+
         ds.resize(rows, cols);
         bs.resize(rows, cols);
         for(int i = 0; i < rows; i++) {
@@ -73,8 +77,10 @@ public:
                 int dy = i - offsety;
                 int dx = j - offsetx;
                 
+
                 ds(i, j) = sqrt(pow(dx, 2.0) + pow(dy, 2.0));
                 bs(i, j) = (nBins-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
+                // bs(i, j) = (nBins-1) * bins.at(i);
 
             }
         }
@@ -217,7 +223,8 @@ public:
         double dist_centres = std::fabs(pcb->queryDistance((yc - y), (xc - x)));
         
         // distance between the parabola and directrix (2 * a)
-        double dist_par_dir = std::fabs((tan(theta*(M_PI / 180))*x - y + c) / (sqrt(1 + pow(tan(theta*(M_PI / 180)), 2)))) / 2.0;
+        double m = tan(theta*(M_PI / 180));
+        double dist_par_dir = std::fabs((m*x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
 
         // distance from circle (boundary)
         double dist_circ = pcb->queryDistance((int)dyc, (int)dxc) - r;
@@ -228,19 +235,20 @@ public:
         double fdist_focus = std::fabs(dist_focus);
         
         // distance from directrix
-        double dist_directrix = (tan(theta*(M_PI / 180))*vx - vy + c) / (sqrt(1 + pow(tan(theta*(M_PI / 180)), 2)));
+        double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
         double fdist_directrix = std::fabs(dist_directrix);
 
         int a = pcb->queryBinNumber((int)dyc, (int)dxc);
    
         double cval = 0;
-        if(fdist_focus > 5.0 || dist_par_dir < 5.0)
+        
+        if(fdist_focus > 10.0 || dist_par_dir < 5.0 || dist_centres > 2.0 || vy < m*vx + c)
             return;
         else if(fdist_directrix == fdist_focus || fdist_circ <= 1.0)
             cval = 1.0;
-        else if (fdist_directrix < 2.0 || fdist_focus > 2.0)
+        else if (fdist_directrix < 2.0)
             cval = -1.0;
-        else if(fdist_directrix > fdist_focus)
+        else if(fdist_directrix > fdist_focus || fdist_circ < 1.0 + inlierParameter)
             cval = 0.5;
         
         if(cval) {

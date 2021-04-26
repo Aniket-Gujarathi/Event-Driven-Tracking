@@ -318,8 +318,9 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     this->adaptive = adaptive;
     this->nthreads = nthreads;
     this->nRandoms = randoms + 1.0;
-    rbound_min = res.width/31;
-    rbound_max = res.width/10;
+    rbound_min = res.width/61;
+    rbound_max = res.width/20;
+    yDebug() << "rb" << rbound_min;
     theta_min = -10;
     theta_max = 10;
     c_min = -res.height/2.0;
