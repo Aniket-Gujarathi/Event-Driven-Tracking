@@ -99,8 +99,8 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
 
     //options and parameters
     px = py = pr = 0;
-    res.height = rf.check("height", Value(240)).asInt();
-    res.width = rf.check("width", Value(304)).asInt();
+    res.height = rf.check("height", Value(480)).asInt();
+    res.width = rf.check("width", Value(640)).asInt();
     gain = rf.check("gain", Value(0.0005)).asDouble();
     batch_size = rf.check("batch", Value(0)).asInt();
     bool adaptivesampling = rf.check("adaptive") &&
@@ -314,7 +314,7 @@ void delayControl::run()
         vpf.extractTargetPosition(avgx, avgy, avgr, avgtheta, avgc, avgxc, avgyc);
         dx = avgx - dx; dy = avgy - dy; dr = avgr - dr; dtheta = avgtheta - dtheta; dc = avgc - dc; dxc = avgxc - dxc; dyc = avgyc - dyc;
         double roisize = avgr + 10;
-        qROI.setROI(avgx - roisize, avgx + roisize, avgy - roisize, avgy + roisize);
+        qROI.setROI(avgxc - roisize, avgxc + roisize, avgyc - roisize, avgyc + roisize);
 
         //set our new window #events
         if(!batch_size) {
@@ -458,10 +458,10 @@ void delayControl::run()
                 yarp::sig::ImageOf<yarp::sig::PixelBgr> &image = *image_ptr;
                 int panoff = panelnumber * res.width;
 
-                int px1 = avgx - roisize - 30; if(px1 < 0) px1 = 0;
-                int px2 = avgx + roisize + 30; if(px2 >= res.width) px2 = res.width-1;
-                int py1 = avgy - roisize - 10; if(py1 < 0) py1 = 0;
-                int py2 = avgy + roisize + 10; if(py2 >= res.height) py2 = res.height-1;
+                int px1 = avgxc - roisize - 30; if(px1 < 0) px1 = 0;
+                int px2 = avgxc + roisize + 30; if(px2 >= res.width) px2 = res.width-1;
+                int py1 = avgyc - roisize - 10; if(py1 < 0) py1 = 0;
+                int py2 = avgyc + roisize + 10; if(py2 >= res.height) py2 = res.height-1;
 
                 px1 += panoff; px2 += panoff;
                 for(int x = px1; x <= px2; x+=2) {

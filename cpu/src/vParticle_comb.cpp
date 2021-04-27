@@ -319,8 +319,7 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     this->nthreads = nthreads;
     this->nRandoms = randoms + 1.0;
     rbound_min = res.width/61;
-    rbound_max = res.width/20;
-    yDebug() << "rb" << rbound_min;
+    rbound_max = res.width/20;  
     theta_min = -10;
     theta_max = 10;
     c_min = -res.height/2.0;
@@ -349,7 +348,7 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     vParticle p;
     p.attachPCB(&pcb);
     p.resetWeight(1.0/nparticles);
-    p.setContraints(0, res.width, 0, res.height, rbound_min, rbound_max, theta_min, theta_max, c_min, c_max, xc_min, xc_max, yc_min, yc_max);
+    p.setContraints(0, res.width, 0, res.height, rbound_min, rbound_max, theta_min, theta_max, c_min, c_max, 0, res.width, 0, res.height);
     for(int i = 0; i < this->nparticles; i++) {
         p.initialiseParameters(i, minlikelihood, negativeBias, inlierThresh, 0, bins);
         ps.push_back(p);

@@ -123,8 +123,8 @@ public:
             return NULL;
         }
     
-        int d = b * b - 4 * a * c;
-        double sqrt_val = sqrt(abs(d));
+        double d = b * b - 4 * a * c;
+        double sqrt_val = sqrt(std::fabs(d));
     
         if (d > 0) {
             return (double)(-b - sqrt_val) / (2 * a);

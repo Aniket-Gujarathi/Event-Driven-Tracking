@@ -152,20 +152,20 @@ private:
     double likelihood;
     int nw;
     double predlike;
-    int    outlierCount;
-    int    inlierCount;
+    int outlierCount;
+    int inlierCount;
     yarp::sig::Vector angdist;
     yarp::sig::Vector negdist;
 
     //state and weight
     double x;
     double y;
-    double r; //circle rad
     double theta;
     double c;
     //circle
     double xc;
     double yc;
+    double r; //circle rad
 
     double weight;
 
@@ -220,18 +220,21 @@ public:
         double dyc = vy - yc;
 
         // distance between the circle centre and parabola focus
-        double dist_centres = std::fabs(pcb->queryDistance((yc - y), (xc - x)));
+        // double dist_centres = std::fabs(pcb->queryDistance((yc - y), (xc - x)));
+        double dist_centres = std::fabs(sqrt(pow((xc - x), 2) + pow((yc - y), 2)));
         
         // distance between the parabola and directrix (2 * a)
         double m = tan(theta*(M_PI / 180));
-        double dist_par_dir = std::fabs((m*x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
+        double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
 
         // distance from circle (boundary)
-        double dist_circ = pcb->queryDistance((int)dyc, (int)dxc) - r;
+        // double dist_circ = pcb->queryDistance((int)dyc, (int)dxc) - r;
+        double dist_circ = sqrt(dyc*dyc + dxc*dxc) - r;
         double fdist_circ = std::fabs(dist_circ);
 
         // distance from focus
-        double dist_focus = pcb->queryDistance((int)dy, (int)dx);
+        // double dist_focus = pcb->queryDistance((int)dy, (int)dx);
+        double dist_focus = sqrt(dy*dy + dx*dx);
         double fdist_focus = std::fabs(dist_focus);
         
         // distance from directrix
@@ -242,7 +245,7 @@ public:
    
         double cval = 0;
         
-        if(fdist_focus > 10.0 || dist_par_dir < 5.0 || dist_centres > 2.0 || vy < m*vx + c)
+        if(fdist_focus > 10.0 || dist_par_dir < 5.0 || dist_centres > 5.0 || vy < m * vx + c)
             return;
         else if(fdist_directrix == fdist_focus || fdist_circ <= 1.0)
             cval = 1.0;
@@ -426,7 +429,7 @@ public:
                     int bins, bool adaptive, int nthreads, double minlikelihood,
                     double inlierThresh, double randoms, double negativeBias);
 
-    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0, int xc = 220, int yc = 160);
+    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0, int xc = 0, int yc = 0);
     void resetToSeed();
     void setMinLikelihood(double value);
     void setInlierParameter(double value);
