@@ -250,7 +250,7 @@ public:
         else if(fdist_directrix == fdist_focus || fdist_circ <= 1.0)
             cval = 1.0;
         else if (fdist_directrix < 2.0)
-            cval = -1.0;
+            cval = -0.5;
         else if(fdist_directrix > fdist_focus || fdist_circ < 1.0 + inlierParameter)
             cval = 0.5;
         
@@ -266,8 +266,9 @@ public:
                     nw = n;
                 }
             }
-            score -= negativeScaler;
+            
         } else {
+            score -= negativeScaler;
         }
         
         return;

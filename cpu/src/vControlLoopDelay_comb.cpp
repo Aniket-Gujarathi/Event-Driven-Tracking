@@ -422,7 +422,7 @@ void delayControl::run()
         //output a debug image
         if(debugPort.getOutputCount()) {
 
-            //static double prev_likelihood = vpf.maxlikelihood;
+            static double prev_likelihood = vpf.maxlikelihood;
             static int NOFPANELS = 1;
 
             static yarp::sig::ImageOf< yarp::sig::PixelBgr> *image_ptr = 0;
@@ -438,11 +438,10 @@ void delayControl::run()
                 //trigger_capture = yarp::os::Time::now() - pimagetime > 0.1;
                 trigger_capture = true;
             }
-            //prev_likelihood = vpf.maxlikelihood;
+            prev_likelihood = vpf.maxlikelihood;
 
             //if we are in waiting state and
             if(trigger_capture) {
-                // yDebug() << "-----check avgr----"<< avgr;
                 //trigger the capture of the panels only if we aren't already
                 pimagetime = yarp::os::Time::now();
                 yarp::sig::ImageOf< yarp::sig::PixelBgr> &image_ref =
@@ -488,7 +487,7 @@ void delayControl::run()
 
                 }
                 drawEvents(image, qROI.q, panoff);
-
+                
                 cv::Mat cvImg = yarp::cv::toCvMat(image);
                 
                 vector <Point2f> list_point;
