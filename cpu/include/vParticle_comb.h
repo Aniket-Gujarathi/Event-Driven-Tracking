@@ -57,18 +57,17 @@ public:
         offsety = 0;
     }
 
-    void configure(int height, int width, double maxa, double maxb, int nBins)
+    void configure(int height, int width, double maxrad, int nBins)
     {
-<<<<<<< HEAD
-        rows = (height + maxb) * 2 + 1;
-        cols = (width + maxa) * 2 + 1;
-=======
         rows = (height + maxrad) * 2 + 1;
         cols = (width + maxrad) * 2 + 1;
         
->>>>>>> parabola
         offsety = rows/2;
         offsetx = cols/2;
+
+        // std::vector<double> bins;
+        // int k = 5;
+        // bins.resize(2 * k);
 
         ds.resize(rows, cols);
         bs.resize(rows, cols);
@@ -78,8 +77,10 @@ public:
                 int dy = i - offsety;
                 int dx = j - offsetx;
                 
+
                 ds(i, j) = sqrt(pow(dx, 2.0) + pow(dy, 2.0));
                 bs(i, j) = (nBins-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
+                // bs(i, j) = (nBins-1) * bins.at(i);
 
             }
         }
@@ -142,37 +143,29 @@ private:
     bool constrain;
     int minx, maxx;
     int miny, maxy;
-<<<<<<< HEAD
-    //int minr, maxr;
-    int mina, maxa;
-    int minb, maxb;
-=======
     int minr, maxr;
     int mintheta, maxtheta;
     int minc, maxc;
->>>>>>> parabola
+    int minxc, maxxc, minyc, maxyc;
 
     //temporary parameters (on update cycle)
     double likelihood;
     int nw;
     double predlike;
-    int    outlierCount;
-    int    inlierCount;
+    int outlierCount;
+    int inlierCount;
     yarp::sig::Vector angdist;
     yarp::sig::Vector negdist;
 
     //state and weight
     double x;
     double y;
-<<<<<<< HEAD
-    //double r;
-    double a;
-    double b;
-=======
-    double r;
     double theta;
     double c;
->>>>>>> parabola
+    //circle
+    double xc;
+    double yc;
+    double r; //circle rad
 
     double weight;
 
@@ -189,22 +182,13 @@ public:
     void updateMinLikelihood(double value);
     void attachPCB(preComputedBins *pcb) { this->pcb = pcb; }
 
-<<<<<<< HEAD
-    void initialiseState(double x, double y, double a, double b);
-    void randomise(int x, int y, int a, int b);
-=======
-    void initialiseState(double x, double y, double r, double theta, double c);
-    void randomise(int x, int y, int r, int theta, int c);
->>>>>>> parabola
+    void initialiseState(double x, double y, double r, double theta, double c, double xc, double yc);
+    void randomise(int x, int y, int r, int theta, int c, int xc, int yc);
 
     void resetWeight(double value);
     void resetRadius(double value);
     void resetArea();
-<<<<<<< HEAD
-    void setContraints(int minx, int maxx, int miny, int maxy, int mina, int maxa, int minb, int maxb);
-=======
-    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc);
->>>>>>> parabola
+    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc, int minxc, int maxxc, int minyc, int maxyc);
     void checkConstraints();
     void setNegativeBias(double value);
     void setInlierParameter(double value);
@@ -212,7 +196,7 @@ public:
 
     //update
     void predict(double sigma);
-    double approxatan2(double y, double x);
+    double approxatan2(double yc, double xc);
 
     void initLikelihood(int windowSize)
     {
@@ -228,75 +212,99 @@ public:
 
     inline void incrementalLikelihood(int vx, int vy, int n)
     {
+        // parabola
         double dx = vx - x;
         double dy = vy - y;
-<<<<<<< HEAD
-        double theta = atan2(dy, dx);
-        //double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
-        //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
-        double sqrd = sqrt(pow(dx*cos(theta), 2.0) + pow(dy*sin(theta), 2.0));
+        // circle
+        double dxc = vx - xc;
+        double dyc = vy - yc;
 
-        double fsqrd = std::fabs(sqrd);
-=======
+        // distance between the circle centre and parabola focus
+        // double dist_centres = std::fabs(pcb->queryDistance((yc - y), (xc - x)));
+        double dist_centres = std::fabs(sqrt(pow((xc - x), 2) + pow((yc - y), 2)));
+        
+        // distance between the parabola and directrix (2 * a)
+        double m = tan(theta*(M_PI / 180));
+        double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
 
-        //double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
-        //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
-        double sqrd_par = pcb->queryDistance((int)dy, (int)dx);
-        double fsqrd_par = std::fabs(sqrd_par);
+        // distance from circle (boundary)
+        // double dist_circ = pcb->queryDistance((int)dyc, (int)dxc) - r;
+        double dist_circ = sqrt(dyc*dyc + dxc*dxc) - r;
+        double fdist_circ = std::fabs(dist_circ);
 
-        // double sqrd_dir = y - (vy - 2 * (r / 4.0));
-        double sqrd_dir = (tan(theta*(M_PI / 180))*x - y + c) / (sqrt(1 + pow(tan(theta), 2)));
-        double fsqrd_dir = std::fabs(sqrd_dir);
-        // yDebug()<< "theta" << tan(theta*(M_PI / 180));
-        // yDebug() << "states" << theta;
->>>>>>> parabola
+        // distance from focus
+        // double dist_focus = pcb->queryDistance((int)dy, (int)dx);
+        double dist_focus = sqrt(dy*dy + dx*dx);
+        double fdist_focus = std::fabs(dist_focus);
+        
+        // distance from directrix
+        double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
+        double fdist_directrix = std::fabs(dist_directrix);
 
-        //int a = 0.5 + (angbuckets-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
-        int al = pcb->queryBinNumber((int)dy, (int)dx);
-
-        // OPTION Parabola
-        double fsqrd_diff = std::fabs(fsqrd_dir - fsqrd_par);
+        int a = pcb->queryBinNumber((int)dyc, (int)dxc);
+   
         double cval = 0;
-        if(fsqrd_diff > 1.0 + inlierParameter)
+        
+        if(fdist_focus > 10.0 || dist_par_dir < 5.0 || dist_centres > 5.0 || vy < m * vx + c)
             return;
-
-        if (fsqrd_dir < fsqrd_par){
-            // yDebug() << "less" << fsqrd_dir << fsqrd_par;
-            score -= negativeScaler;
-        }
-        else if(fsqrd_par < fsqrd_dir){
-            cval = 1;
-        }
-
-
-        //OPTION 2
-        // double fsqrd = std::fabs(fsqrd_dir - fsqrd_par);
-
-        // if(fsqrd > 1.0 + inlierParameter)
-        //     return;
-
-        // double cval = 0;
-        // if(fsqrd < 1.0)
-        //     cval = 1.0;
-        // else if(fsqrd < 1.0 + inlierParameter)
-        //     cval = (1.0 + inlierParameter - fsqrd) / inlierParameter;
+        else if(fdist_directrix == fdist_focus || fdist_circ <= 1.0)
+            cval = 1.0;
+        else if (fdist_directrix < 2.0)
+            cval = -0.5;
+        else if(fdist_directrix > fdist_focus || fdist_circ < 1.0 + inlierParameter)
+            cval = 0.5;
         
         if(cval) {
-            double improve = cval - angdist[al];
+            // double improve = cval - angdist[a];
+            double improve = cval;
             if(improve > 0) {
-                angdist[al] = cval;
+                // angdist[a] = cval;
                 score += improve;
                 if(score >= likelihood) {
+                    // yDebug() << score << likelihood;
                     likelihood = score;
                     nw = n;
                 }
             }
-            score -= negativeScaler;
+            
         } else {
+            score -= negativeScaler;
         }
-
+        
         return;
 
+
+        // OPTION Parabola
+        // double fsqrd_diff = std::fabs(fsqrd_dir - fsqrd_par);
+        // double cval = 0;
+        // if(fdist_dir > 1.0 + inlierParameter && fdist_par > 1.0 + inlierParameter)
+        //     return;
+
+        // else if (fdist_dir < fdist_par){
+        //     score -= negativeScaler;
+        // }
+        // else if(fdist_dir == fdist_par){
+        //     score += 1;
+        //     yDebug() << "score_on"  << score;
+        //     if(score >= likelihood) {
+        //         likelihood = score;
+        //         nw = n;
+        //         }
+            
+        // }
+        // else if(fdist_dir > fdist_par && fdist_dir < 1.0 + inlierParameter){
+        //     score += 0.50;
+        //     yDebug() << "score_in"  << score;
+        //     if(score >= likelihood) {
+        //         likelihood = score;
+        //         nw = n;
+        //         }
+        // }
+        
+        //OPTION 2
+        // double fsqrd = std::fabs(fdist_dir - fdist_par);
+
+        
 
         //ORIGINAL
 //        if(sqrd > inlierParameter) {
@@ -339,14 +347,11 @@ public:
     inline int    getid() { return id; }
     inline double getx()  { return x; }
     inline double gety()  { return y; }
-<<<<<<< HEAD
-    inline double geta()  { return a; }
-    inline double getb()  { return b; }
-=======
     inline double getr()  { return r; }
     inline double gettheta()  { return theta; }
     inline double getc()  { return c; }
->>>>>>> parabola
+    inline double getxc()  { return xc; }
+    inline double getyc()  { return yc; }
     inline double getw()  { return weight; }
     inline double getl()  { return likelihood; }
     inline double getnw() { return nw; }
@@ -395,11 +400,7 @@ private:
     ev::resolution res;
     bool adaptive;
     int bins;
-<<<<<<< HEAD
-    int seedx, seedy, seeda, seedb;
-=======
-    int seedx, seedy, seedr, seedtheta, seedc;
->>>>>>> parabola
+    int seedx, seedy, seedr, seedtheta, seedc, seedxc, seedyc;
     double nRandoms;
 
     //data
@@ -411,19 +412,13 @@ private:
 
     //variables
     double pwsumsq;
-<<<<<<< HEAD
-    int abound_min;
-    int abound_max;
-    int bbound_min;
-    int bbound_max;
-=======
     int rbound_min;
     int rbound_max;
     int theta_min;
     int theta_max;
     int c_min;
     int c_max;
->>>>>>> parabola
+    int xc_min, xc_max, yc_min, yc_max;
 
 public:
 
@@ -435,11 +430,7 @@ public:
                     int bins, bool adaptive, int nthreads, double minlikelihood,
                     double inlierThresh, double randoms, double negativeBias);
 
-<<<<<<< HEAD
-    void setSeed(int x, int y, int a = 0, int b = 0);
-=======
-    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0);
->>>>>>> parabola
+    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0, int xc = 0, int yc = 0);
     void resetToSeed();
     void setMinLikelihood(double value);
     void setInlierParameter(double value);
@@ -447,11 +438,7 @@ public:
     void setAdaptive(bool value = true);
 
     void performObservation(const deque<AE> &q);
-<<<<<<< HEAD
-    void extractTargetPosition(double &x, double &y, double &a, double &b);
-=======
-    void extractTargetPosition(double &x, double &y, double &r, double &theta, double &c);
->>>>>>> parabola
+    void extractTargetPosition(double &x, double &y, double &r, double &theta, double &c, double &xc, double &yc);
     void extractTargetWindow(double &tw);
     void performResample();
     void performPrediction(double sigma);

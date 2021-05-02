@@ -22,7 +22,7 @@
 #include <yarp/os/all.h>
 #include <yarp/sig/Vector.h>
 #include <event-driven/all.h>
-#include "vParticle.h"
+#include "vParticle_inclPar.h"
 
 using namespace ev;
 using namespace yarp::os;
@@ -66,11 +66,7 @@ private:
 
     //variables
     resolution res;
-<<<<<<< HEAD
-    double avgx, avgy, avga, avgb;
-=======
     double avgx, avgy, avgr, avgtheta, avgc;
->>>>>>> parabola
     int maxRawLikelihood;
     double gain;
     int detectionThreshold;
@@ -84,17 +80,10 @@ private:
     unsigned int targetproc;
     double dx;
     double dy;
-<<<<<<< HEAD
-    //double dr;
-    double da;
-    double db;
-    double px, py, pa, pb;
-=======
     double dr;
     double dtheta;
     double dc;
     double px, py, pr, ptheta, pc;
->>>>>>> parabola
     ev::benchmark cpuusage;
     BufferedPort< ImageOf<PixelBgr> > debugPort;
 
@@ -110,13 +99,8 @@ public:
     virtual bool respond(const yarp::os::Bottle& command, yarp::os::Bottle& reply);
 
     bool open(std::string name, unsigned int qlimit = 0);
-<<<<<<< HEAD
-    void performReset(int x = -1, int y = -1, int a = -1, int b = -1);
-    void setFilterInitialState(int x, int y, int a, int b);
-=======
     void performReset(int x = -1, int y = -1, int r = -1, int theta = -1, int c = -1);
     void setFilterInitialState(int x, int y, int r, int theta, int c);
->>>>>>> parabola
 
     void setMinRawLikelihood(double value);
     void setMaxRawLikelihood(int value);

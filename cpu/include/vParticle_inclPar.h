@@ -57,16 +57,11 @@ public:
         offsety = 0;
     }
 
-    void configure(int height, int width, double maxa, double maxb, int nBins)
+    void configure(int height, int width, double maxrad, int nBins)
     {
-<<<<<<< HEAD
-        rows = (height + maxb) * 2 + 1;
-        cols = (width + maxa) * 2 + 1;
-=======
         rows = (height + maxrad) * 2 + 1;
         cols = (width + maxrad) * 2 + 1;
         
->>>>>>> parabola
         offsety = rows/2;
         offsetx = cols/2;
 
@@ -142,15 +137,9 @@ private:
     bool constrain;
     int minx, maxx;
     int miny, maxy;
-<<<<<<< HEAD
-    //int minr, maxr;
-    int mina, maxa;
-    int minb, maxb;
-=======
     int minr, maxr;
     int mintheta, maxtheta;
     int minc, maxc;
->>>>>>> parabola
 
     //temporary parameters (on update cycle)
     double likelihood;
@@ -164,15 +153,9 @@ private:
     //state and weight
     double x;
     double y;
-<<<<<<< HEAD
-    //double r;
-    double a;
-    double b;
-=======
     double r;
     double theta;
     double c;
->>>>>>> parabola
 
     double weight;
 
@@ -189,22 +172,13 @@ public:
     void updateMinLikelihood(double value);
     void attachPCB(preComputedBins *pcb) { this->pcb = pcb; }
 
-<<<<<<< HEAD
-    void initialiseState(double x, double y, double a, double b);
-    void randomise(int x, int y, int a, int b);
-=======
     void initialiseState(double x, double y, double r, double theta, double c);
     void randomise(int x, int y, int r, int theta, int c);
->>>>>>> parabola
 
     void resetWeight(double value);
     void resetRadius(double value);
     void resetArea();
-<<<<<<< HEAD
-    void setContraints(int minx, int maxx, int miny, int maxy, int mina, int maxa, int minb, int maxb);
-=======
     void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc);
->>>>>>> parabola
     void checkConstraints();
     void setNegativeBias(double value);
     void setInlierParameter(double value);
@@ -230,61 +204,33 @@ public:
     {
         double dx = vx - x;
         double dy = vy - y;
-<<<<<<< HEAD
-        double theta = atan2(dy, dx);
-        //double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
-        //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
-        double sqrd = sqrt(pow(dx*cos(theta), 2.0) + pow(dy*sin(theta), 2.0));
 
-        double fsqrd = std::fabs(sqrd);
-=======
+        double dist_par = pcb->queryDistance((int)dy, (int)dx);
+        double fdist_par = std::fabs(dist_par);
 
-        //double sqrd = pcb->queryDistance((int)dy, (int)dx) - r;
-        //double sqrd = sqrt(pow(dx, 2.0) + pow(dy, 2.0)) - r;
-        double sqrd_par = pcb->queryDistance((int)dy, (int)dx);
-        double fsqrd_par = std::fabs(sqrd_par);
+        // double sqrd_dir = vy - (y - 2 * (r / 4.0)); // For straight parabola
+        
+        double dist_dir = (tan(theta*(M_PI / 180))*vx - vy + c) / (sqrt(1 + pow(tan(theta*(M_PI / 180)), 2)));
+        double fdist_dir = std::fabs(dist_dir);
 
-        // double sqrd_dir = y - (vy - 2 * (r / 4.0));
-        double sqrd_dir = (tan(theta*(M_PI / 180))*x - y + c) / (sqrt(1 + pow(tan(theta), 2)));
-        double fsqrd_dir = std::fabs(sqrd_dir);
-        // yDebug()<< "theta" << tan(theta*(M_PI / 180));
-        // yDebug() << "states" << theta;
->>>>>>> parabola
+        double fdiff = std::fabs(fdist_dir - fdist_par);
 
-        //int a = 0.5 + (angbuckets-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
-        int al = pcb->queryBinNumber((int)dy, (int)dx);
+        int a = pcb->queryBinNumber((int)dy, (int)dx);
 
-        // OPTION Parabola
-        double fsqrd_diff = std::fabs(fsqrd_dir - fsqrd_par);
         double cval = 0;
-        if(fsqrd_diff > 1.0 + inlierParameter)
+        if(fdist_par > 4.0)
             return;
-
-        if (fsqrd_dir < fsqrd_par){
-            // yDebug() << "less" << fsqrd_dir << fsqrd_par;
-            score -= negativeScaler;
+        else if(fdist_dir >= fdist_par)
+            cval = 1.0;
+        else if (fdist_dir < fdist_par){
+            cval = -1.0;
         }
-        else if(fsqrd_par < fsqrd_dir){
-            cval = 1;
-        }
-
-
-        //OPTION 2
-        // double fsqrd = std::fabs(fsqrd_dir - fsqrd_par);
-
-        // if(fsqrd > 1.0 + inlierParameter)
-        //     return;
-
-        // double cval = 0;
-        // if(fsqrd < 1.0)
-        //     cval = 1.0;
-        // else if(fsqrd < 1.0 + inlierParameter)
-        //     cval = (1.0 + inlierParameter - fsqrd) / inlierParameter;
         
         if(cval) {
-            double improve = cval - angdist[al];
+            yDebug() << "cval" << cval;
+            double improve = cval - angdist[a];
             if(improve > 0) {
-                angdist[al] = cval;
+                angdist[a] = cval;
                 score += improve;
                 if(score >= likelihood) {
                     likelihood = score;
@@ -294,9 +240,41 @@ public:
             score -= negativeScaler;
         } else {
         }
-
+        
         return;
 
+
+        // OPTION Parabola
+        // double fsqrd_diff = std::fabs(fsqrd_dir - fsqrd_par);
+        // double cval = 0;
+        // if(fdist_dir > 1.0 + inlierParameter && fdist_par > 1.0 + inlierParameter)
+        //     return;
+
+        // else if (fdist_dir < fdist_par){
+        //     score -= negativeScaler;
+        // }
+        // else if(fdist_dir == fdist_par){
+        //     score += 1;
+        //     yDebug() << "score_on"  << score;
+        //     if(score >= likelihood) {
+        //         likelihood = score;
+        //         nw = n;
+        //         }
+            
+        // }
+        // else if(fdist_dir > fdist_par && fdist_dir < 1.0 + inlierParameter){
+        //     score += 0.50;
+        //     yDebug() << "score_in"  << score;
+        //     if(score >= likelihood) {
+        //         likelihood = score;
+        //         nw = n;
+        //         }
+        // }
+        
+        //OPTION 2
+        // double fsqrd = std::fabs(fdist_dir - fdist_par);
+
+        
 
         //ORIGINAL
 //        if(sqrd > inlierParameter) {
@@ -339,14 +317,9 @@ public:
     inline int    getid() { return id; }
     inline double getx()  { return x; }
     inline double gety()  { return y; }
-<<<<<<< HEAD
-    inline double geta()  { return a; }
-    inline double getb()  { return b; }
-=======
     inline double getr()  { return r; }
     inline double gettheta()  { return theta; }
     inline double getc()  { return c; }
->>>>>>> parabola
     inline double getw()  { return weight; }
     inline double getl()  { return likelihood; }
     inline double getnw() { return nw; }
@@ -395,11 +368,7 @@ private:
     ev::resolution res;
     bool adaptive;
     int bins;
-<<<<<<< HEAD
-    int seedx, seedy, seeda, seedb;
-=======
     int seedx, seedy, seedr, seedtheta, seedc;
->>>>>>> parabola
     double nRandoms;
 
     //data
@@ -411,19 +380,12 @@ private:
 
     //variables
     double pwsumsq;
-<<<<<<< HEAD
-    int abound_min;
-    int abound_max;
-    int bbound_min;
-    int bbound_max;
-=======
     int rbound_min;
     int rbound_max;
     int theta_min;
     int theta_max;
     int c_min;
     int c_max;
->>>>>>> parabola
 
 public:
 
@@ -435,11 +397,7 @@ public:
                     int bins, bool adaptive, int nthreads, double minlikelihood,
                     double inlierThresh, double randoms, double negativeBias);
 
-<<<<<<< HEAD
-    void setSeed(int x, int y, int a = 0, int b = 0);
-=======
     void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0);
->>>>>>> parabola
     void resetToSeed();
     void setMinLikelihood(double value);
     void setInlierParameter(double value);
@@ -447,11 +405,7 @@ public:
     void setAdaptive(bool value = true);
 
     void performObservation(const deque<AE> &q);
-<<<<<<< HEAD
-    void extractTargetPosition(double &x, double &y, double &a, double &b);
-=======
     void extractTargetPosition(double &x, double &y, double &r, double &theta, double &c);
->>>>>>> parabola
     void extractTargetWindow(double &tw);
     void performResample();
     void performPrediction(double sigma);

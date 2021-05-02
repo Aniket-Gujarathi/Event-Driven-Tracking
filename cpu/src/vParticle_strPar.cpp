@@ -16,11 +16,10 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "vParticle.h"
+#include "vParticle_strPar.h"
 #include <cmath>
 #include <limits>
 #include <algorithm>
-#include "yarp/os/LogStream.h"
 
 using ev::event;
 using ev::AddressEvent;
@@ -67,7 +66,6 @@ void drawEvents(yarp::sig::ImageOf< yarp::sig::PixelBgr> &image, deque<AE> &q,
         image(q[i].x + offsetx, q[i].y) =
                 yarp::sig::PixelBgr(255 * (1-p), 0, 255);
     }
-
 }
 
 void drawcircle(yarp::sig::ImageOf<yarp::sig::PixelBgr> &image, int cx, int cy,
@@ -190,44 +188,21 @@ vParticle& vParticle::operator=(const vParticle &rhs)
 {
     this->x = rhs.x;
     this->y = rhs.y;
-<<<<<<< HEAD
-    this->a = rhs.a;
-    this->b = rhs.b;
-=======
     this->r = rhs.r;
-    this->theta = rhs.theta;
-    this->c = rhs.c;
->>>>>>> parabola
     this->weight = rhs.weight;
     return *this;
 }
 
-<<<<<<< HEAD
-void vParticle::initialiseState(double x, double y, double a, double b)
-{
-    this->x = x;
-    this->y = y;
-    this->a = a;
-    this->b = b;
-}
-
-void vParticle::randomise(int x, int y, int a, int b)
-{
-    initialiseState(rand()%x, rand()%y, rand()%a, rand()%b);
-=======
-void vParticle::initialiseState(double x, double y, double r, double theta, double c)
+void vParticle::initialiseState(double x, double y, double r)
 {
     this->x = x;
     this->y = y;
     this->r = r;
-    this->theta = theta;
-    this->c = c;
 }
 
-void vParticle::randomise(int x, int y, int r, int theta, int c)
+void vParticle::randomise(int x, int y, int r)
 {
-    initialiseState(rand()%x, rand()%y, rand()%r, rand()%theta, rand()%c);
->>>>>>> parabola
+    initialiseState(rand()%x, rand()%y, rand()%r);
 }
 
 void vParticle::resetWeight(double value)
@@ -237,7 +212,7 @@ void vParticle::resetWeight(double value)
 
 void vParticle::resetRadius(double value)
 {
-    this->a = value;
+    this->r = value;
     //resetArea();
 }
 
@@ -253,7 +228,7 @@ void vParticle::setInlierParameter(double value)
 
 void vParticle::resetArea()
 {
-    negativeScaler = negativeBias * angbuckets / (M_PI * a * a);
+    negativeScaler = negativeBias * angbuckets / (M_PI * r * r);
 }
 
 void vParticle::predict(double sigma)
@@ -265,43 +240,19 @@ void vParticle::predict(double sigma)
 
     x = generateUniformNoise(x, sigma);
     y = generateUniformNoise(y, sigma);
-<<<<<<< HEAD
-    a = generateUniformNoise(a, sigma * 0.2);
-    b = generateUniformNoise(b, sigma * 0.2);
-=======
     r = generateUniformNoise(r, sigma * 0.2);
-    theta = generateUniformNoise(theta, sigma * 0.2);
-    c = generateUniformNoise(c, sigma * 0.2);
->>>>>>> parabola
 
     if(constrain) checkConstraints();
 }
 
-<<<<<<< HEAD
-void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int mina, int maxa, int minb, int maxb)
-=======
-void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc)
->>>>>>> parabola
+void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr)
 {
     this->minx = minx;
     this->maxx = maxx;
     this->miny = miny;
     this->maxy = maxy;
-<<<<<<< HEAD
-    // this->minr = minr;
-    // this->maxr = maxr;
-    this->mina = mina;
-    this->maxa = maxa;
-    this->minb = minb;
-    this->maxb = maxb;
-=======
     this->minr = minr;
     this->maxr = maxr;
-    this->mintheta = mintheta;
-    this->maxtheta = maxtheta;
-    this->minc = minc;
-    this->maxc = maxc;
->>>>>>> parabola
     constrain = true;
 }
 void vParticle::checkConstraints()
@@ -310,21 +261,9 @@ void vParticle::checkConstraints()
     if(x > maxx) x = maxx;
     if(y < miny) y = miny;
     if(y > maxy) y = maxy;
-<<<<<<< HEAD
-    if(a < mina) a = mina;
-    if(a > maxa) a = maxa;
-    if(b < minb) b = minb;
-    if(b > maxb) b = maxb;
-=======
     if(r < minr) r = minr;
     if(r > maxr) r = maxr;
-    if(theta < mintheta) theta = mintheta;
-    if(theta > maxtheta) theta = maxtheta;
-    if(c < minc) c = minc;
-    if(c > maxc) c = maxc;
->>>>>>> parabola
 }
-
 
 
 
@@ -350,21 +289,9 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     this->adaptive = adaptive;
     this->nthreads = nthreads;
     this->nRandoms = randoms + 1.0;
-<<<<<<< HEAD
-    abound_min = res.width/61;
-    abound_max = res.width/5;
-    bbound_min = res.width/61;
-    bbound_max = res.width/5;
-    pcb.configure(res.height, res.width, abound_max, bbound_max, bins);
-=======
     rbound_min = res.width/61;
     rbound_max = res.width;
-    theta_min = -5;
-    theta_max = 5;
-    c_min = 0;
-    c_max = res.height / 3;
     pcb.configure(res.height, res.width, rbound_max, bins);
->>>>>>> parabola
     setSeed(res.width/2.0, res.height/2.0);
 
     ps.clear();
@@ -388,11 +315,7 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     vParticle p;
     p.attachPCB(&pcb);
     p.resetWeight(1.0/nparticles);
-<<<<<<< HEAD
-    p.setContraints(0, res.width, 0, res.height, abound_min, abound_max, bbound_min, bbound_max);
-=======
-    p.setContraints(0, res.width, 0, res.height, rbound_min, rbound_max, theta_min, theta_max, c_min, c_max);
->>>>>>> parabola
+    p.setContraints(0, res.width, 0, res.height, rbound_min, rbound_max);
     for(int i = 0; i < this->nparticles; i++) {
         p.initialiseParameters(i, minlikelihood, negativeBias, inlierThresh, 0, bins);
         ps.push_back(p);
@@ -402,37 +325,21 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     resetToSeed();
 }
 
-<<<<<<< HEAD
-void vParticlefilter::setSeed(int x, int y, int a, int b)
+void vParticlefilter::setSeed(int x, int y, int r)
 {
-    seedx = x; seedy = y; seeda = a; seedb = b;
-=======
-void vParticlefilter::setSeed(int x, int y, int r, int theta, int c)
-{
-    seedx = x; seedy = y; seedr = r; seedtheta = theta; seedc = c;
->>>>>>> parabola
+    seedx = x; seedy = y; seedr = r;
 }
 
 void vParticlefilter::resetToSeed()
 {
-    if(seeda) {
+    if(seedr) {
         for(int i = 0; i < nparticles; i++) {
-<<<<<<< HEAD
-            ps[i].initialiseState(seedx, seedy, seeda, seedb);
+            ps[i].initialiseState(seedx, seedy, seedr);
         }
     } else {
         for(int i = 0; i < nparticles; i++) {
-            ps[i].initialiseState(seedx, seedy, 30, 20);
-=======
-            ps[i].initialiseState(seedx, seedy, seedr, seedtheta, seedc);
->>>>>>> parabola
+            ps[i].initialiseState(220, 110, 50);
         }
-    // } else {
-    //     for(int i = 0; i < nparticles; i++) {
-    //         ps[i].initialiseState(seedx, seedy,
-    //                               rbound_min + (rbound_max - rbound_min) *
-    //                               ((double)rand()/RAND_MAX));
-    //     }
     }
 }
 
@@ -503,28 +410,15 @@ void vParticlefilter::performObservation(const deque<AE> &q)
 
 }
 
-<<<<<<< HEAD
-void vParticlefilter::extractTargetPosition(double &x, double &y, double &a, double &b)
+void vParticlefilter::extractTargetPosition(double &x, double &y, double &r)
 {
-    x = 0; y = 0; a = 0; b = 0;
-=======
-void vParticlefilter::extractTargetPosition(double &x, double &y, double &r, double &theta, double &c)
-{
-    x = 0; y = 0; r = 0; theta = 0; c = 0;
->>>>>>> parabola
+    x = 0; y = 0; r = 0;
 
     for(int i = 0; i < nparticles; i++) {
         double w = ps[i].getw();
         x += ps[i].getx() * w;
         y += ps[i].gety() * w;
-<<<<<<< HEAD
-        a += ps[i].geta() * w;
-        b += ps[i].getb() * w;
-=======
         r += ps[i].getr() * w;
-        theta += ps[i].gettheta() * w;
-        c += ps[i].getc() * w;
->>>>>>> parabola
     }
 }
 
@@ -554,14 +448,8 @@ void vParticlefilter::performResample()
         //perform the resample
         for(int i = 0; i < nparticles; i++) {
             double rn = nRandoms * (double)rand() / RAND_MAX;
-<<<<<<< HEAD
             if(rn > 1.0)
-                ps[i].randomise(res.width, res.height, abound_max, bbound_max);
-=======
-            if(rn > 1.0){
-                ps[i].randomise(res.width, res.height, rbound_max, theta_max, c_max);
-            }
->>>>>>> parabola
+                ps[i].randomise(res.width, res.height, rbound_max);
             else {
                 int j = 0;
                 for(j = 0; j < nparticles; j++)
