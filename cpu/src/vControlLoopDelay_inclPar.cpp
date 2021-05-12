@@ -39,7 +39,7 @@ int main(int argc, char * argv[])
     yarp::os::ResourceFinder rf;
     rf.setVerbose( true );
     rf.setDefaultContext( "event-driven" );
-    rf.setDefaultConfigFile( "vParticleFilterTracker.ini" );
+    rf.setDefaultConfigFile( "vParticleFilterTracker_inclPar.ini" );
     rf.configure( argc, argv );
 
     return instance.runModule(rf);
@@ -87,6 +87,28 @@ int roiq::add(const AE &v)
 // DELAYCONTROL
 /*////////////////////////////////////////////////////////////////////////////*/
 
+double delayControl::findRoots(double a, double b, double c){
+    if (a == 0) {
+            // yDebug() << "Invalid";
+            return NULL;
+        }
+    
+        double d = b * b - 4 * a * c;
+        double sqrt_val = sqrt(abs(d));
+    
+        if (d > 0) {
+            return (double)(-b - sqrt_val) / (2 * a);
+        }
+        else if (d == 0) {
+            return -(double)b / (2 * a);
+        }
+        else // d < 0
+        {
+            // yDebug() << "Complex";
+            return NULL;
+        }
+}
+
 bool delayControl::configure(yarp::os::ResourceFinder &rf)
 {
     //module name and control
@@ -99,8 +121,8 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
 
     //options and parameters
     px = py = pr = 0;
-    res.height = rf.check("height", Value(240)).asInt();
-    res.width = rf.check("width", Value(304)).asInt();
+    res.height = rf.check("height", Value(480)).asInt();
+    res.width = rf.check("width", Value(640)).asInt();
     gain = rf.check("gain", Value(0.0005)).asDouble();
     batch_size = rf.check("batch", Value(0)).asInt();
     bool adaptivesampling = rf.check("adaptive") &&

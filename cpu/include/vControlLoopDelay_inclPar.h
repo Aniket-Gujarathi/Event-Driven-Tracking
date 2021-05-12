@@ -115,30 +115,7 @@ public:
     void setMinToProc(int value);
     void setResetTimeout(double value);
 
-    double findRoots(double a, double b, double c)
-    {
-        
-        if (a == 0) {
-            // yDebug() << "Invalid";
-            return NULL;
-        }
-    
-        int d = b * b - 4 * a * c;
-        double sqrt_val = sqrt(abs(d));
-    
-        if (d > 0) {
-            return (double)(-b - sqrt_val) / (2 * a);
-        }
-        else if (d == 0) {
-            return -(double)b / (2 * a);
-        }
-        else // d < 0
-        {
-            // yDebug() << "Complex";
-            return NULL;
-        }
-    }
-
+    double findRoots(double a, double b, double c);
 
     yarp::sig::Vector getTrackingStats();
 
