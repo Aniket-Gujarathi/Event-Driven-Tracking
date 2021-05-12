@@ -98,8 +98,8 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
 
     //options and parameters
     px = py = pr = 0;
-    res.height = rf.check("height", Value(240)).asInt();
-    res.width = rf.check("width", Value(304)).asInt();
+    res.height = rf.check("height", Value(480)).asInt();
+    res.width = rf.check("width", Value(640)).asInt();
     gain = rf.check("gain", Value(0.0005)).asDouble();
     batch_size = rf.check("batch", Value(0)).asInt();
     bool adaptivesampling = rf.check("adaptive") &&
@@ -474,10 +474,14 @@ void delayControl::run()
 
                 }
                 drawEvents(image, qROI.q, panoff);
-                cv::Mat cvImg = yarp::cv::toCvMat(image);
 
-                cv::imshow("debug_img", cvImg);
-                cv::waitKey(0);
+                cv::Mat cvImg = yarp::cv::toCvMat(image);
+                vector <Point2f> list_point;
+ 
+                if (px1<avgx<px2 && py1<avgy<py2){
+                    cv::circle(cvImg, Point(avgx, avgy), avgr, (255, 255, 255), 2);
+                }
+
                 panelnumber++;
             }
 
