@@ -25,14 +25,14 @@ def normalize(score, max, min):
     return norm_score 
 
 def draw(x_c, y_c, r, norm_score):
-    im = cv2.imread('/home/aniket/yarp-install/projects/particle-filter-tracking/cpu/test_img/00001217.jpg')
+    im = cv2.imread('/home/aniket/yarp-install/projects/particle-filter-tracking/cpu/test_img/00002736.jpg')
     for i in range(len(x_c)):
         if norm_score[i] < 85:
-            image = cv2.circle(im, (x_c[i], y_c[i]), r[i], (int(norm_score[i]), 0, 0), 1)
+            image = cv2.circle(im, (x_c[i], y_c[i]), 0, (int(norm_score[i]), 0, 0), 2)
         elif norm_score[i] < 170:
-            image = cv2.circle(im, (x_c[i], y_c[i]), r[i], (0, int(norm_score[i]), 0), 1)
+            image = cv2.circle(im, (x_c[i], y_c[i]), 0, (0, int(norm_score[i]), 0), 2)
         elif norm_score[i] < 255:
-            image = cv2.circle(im, (x_c[i], y_c[i]), r[i], (0, 0, int(norm_score[i])), 1)
+            image = cv2.circle(im, (x_c[i], y_c[i]), 0, (0, 0, int(norm_score[i])), 2)
     cv2.imshow('image', image)
     #cv2.imwrite('/home/aniket/yarp-install/projects/particle-filter-tracking/cpu/test_img/exp_test.jpg', image)
     cv2.waitKey(0)
