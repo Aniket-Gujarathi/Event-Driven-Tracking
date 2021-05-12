@@ -1,11 +1,12 @@
 import cv2
 import numpy as np 
 from tqdm import tqdm
+from sys import argv, exit
 
 def  calculate_likelihood(image):
     
     height, width, _ = image.shape
-    f = open("data_exp_648.txt", "w")
+    f = open("test_2.txt", "w")
     idx = np.where(np.any(image != [0, 0, 0], axis=-1)) # ids of events in the image
     
     for x_c in tqdm(range(0, width - 1, 5)): # all possible Xc state
@@ -36,13 +37,15 @@ def  calculate_likelihood(image):
                     else:
                         score -= 0.5
 
+                if (score != 0):
                     # write the data to a txt file
                     f.write(str(x_c) + " " + str(y_c) + " " + str(r) + " " + str(score) + " " + str(likelihood) + "\n")
 
                         
 
 if __name__ == '__main__':
-    image = cv2.imread('/home/aniket/yarp-install/projects/particle-filter-tracking/cpu/test_img/00000648.jpg')
+    img_path = argv[1]
+    image = cv2.imread(img_path)
     calculate_likelihood(image)
     
     
