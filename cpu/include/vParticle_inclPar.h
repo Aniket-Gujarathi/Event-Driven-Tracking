@@ -70,11 +70,16 @@ public:
         for(int i = 0; i < rows; i++) {
             for(int j = 0; j < cols; j++) {
 
+                // int k = 5;
                 int dy = i - offsety;
                 int dx = j - offsetx;
                 
+                // int dy1 = i - k;
+                // int dy2 = i + k;
+                    
                 ds(i, j) = sqrt(pow(dx, 2.0) + pow(dy, 2.0));
                 bs(i, j) = (nBins-1) * (atan2(dy, dx) + M_PI) / (2.0 * M_PI);
+                // bs(i, j) = (dy2 - dy1);
 
             }
         }
@@ -184,6 +189,9 @@ public:
     void setInlierParameter(double value);
 
 
+    double findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c);
+    double findRoots(double a, double b, double c);
+
     //update
     void predict(double sigma);
     double approxatan2(double y, double x);
@@ -205,40 +213,61 @@ public:
         double dx = vx - x;
         double dy = vy - y;
 
-        double dist_par = pcb->queryDistance((int)dy, (int)dx);
-        double fdist_par = std::fabs(dist_par);
+        // distance between the parabola and directrix (2 * a)
+        double m = tan(theta*(M_PI / 180));
+        double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
 
-        // double sqrd_dir = vy - (y - 2 * (r / 4.0)); // For straight parabola
+        // Find pt of intersection of parabola and foc-ev
+        // double x_par, y_par;
+        // x_par, y_par = vParticle::findIntersection(vx, vy, x, y, r, m, c);
+        // double dist_foc_par = std::fabs(sqrt(pow((x - x_par), 2) + pow((y - y_par), 2)));
+
+        // double fdist_par = ((sqrt(pow((vx - x), 2) + pow((vy - y), 2))) - dist_foc_par);
+
+        // distance from focus
+        double dist_focus = sqrt(pow(dx, 2) + pow(dy, 2));
+        double fdist_focus = std::fabs(dist_focus);
         
-        double dist_dir = (tan(theta*(M_PI / 180))*vx - vy + c) / (sqrt(1 + pow(tan(theta*(M_PI / 180)), 2)));
-        double fdist_dir = std::fabs(dist_dir);
+        // distance from directrix
+        double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
+        double fdist_directrix = std::fabs(dist_directrix);
 
-        double fdiff = std::fabs(fdist_dir - fdist_par);
-
-        int a = pcb->queryBinNumber((int)dy, (int)dx);
+        // int a = pcb->queryBinNumber((int)dy, (int)dx);
+        
+        // double cval = 0;
+        // if(fdist_par > 3.0){
+        //     score -= 0.1;
+        //     return;}
+        // else if(fdist_par < 2.0 && fdist_par > -2.0)
+        //     cval = 1.0;
+        // else if (fdist_par < 3.0 && fdist_par > 2.0){
+        //     cval = -1.0;
+        // }
 
         double cval = 0;
-        if(fdist_par > 4.0)
+        if(fdist_focus > 5.0 || dist_par_dir < 5.0)
             return;
-        else if(fdist_dir >= fdist_par)
+        else if(fdist_directrix == fdist_focus)
             cval = 1.0;
-        else if (fdist_dir < fdist_par){
-            cval = -1.0;
-        }
-        
-        if(cval) {
-            yDebug() << "cval" << cval;
-            double improve = cval - angdist[a];
+        else if (fdist_directrix < 2.0)
+            cval = -0.5;
+        else if(fdist_directrix > fdist_focus)
+            cval = 0.5;
+
+
+        if(cval >= 0) {
+            double improve = cval;
             if(improve > 0) {
-                angdist[a] = cval;
+                // angdist[a] = cval;
                 score += improve;
                 if(score >= likelihood) {
                     likelihood = score;
                     nw = n;
                 }
-            }
+            }    
+        } 
+        else {
             score -= negativeScaler;
-        } else {
         }
         
         return;

@@ -117,6 +117,7 @@ public:
 
     double findRoots(double a, double b, double c);
 
+
     yarp::sig::Vector getTrackingStats();
 
     //bool threadInit();

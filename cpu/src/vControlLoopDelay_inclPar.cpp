@@ -87,6 +87,7 @@ int roiq::add(const AE &v)
 // DELAYCONTROL
 /*////////////////////////////////////////////////////////////////////////////*/
 
+
 double delayControl::findRoots(double a, double b, double c){
     if (a == 0) {
             // yDebug() << "Invalid";
@@ -280,7 +281,6 @@ void delayControl::run()
     channel = q->front().getChannel();
 
     while(true) {
-        // yDebug()<<"----------------started--------------------";
         //calculate error
         double delay = input_port.queryDelayT();
         unsigned int unprocdqs = input_port.queryunprocessed();
@@ -332,7 +332,7 @@ void delayControl::run()
         vpf.extractTargetPosition(avgx, avgy, avgr, avgtheta, avgc);
         dx = avgx - dx; dy = avgy - dy; dr = avgr - dr; dtheta = avgtheta - dtheta; dc = avgc - dc;
         double roisize = avgr + 10;
-        qROI.setROI(avgx - roisize, avgx + roisize, avgy - roisize, avgy + roisize);
+        qROI.setROI(avgx - roisize - 30, avgx + roisize + 30, avgy - roisize - 10, avgy + roisize + 10);
 
         //set our new window #events
         if(!batch_size) {

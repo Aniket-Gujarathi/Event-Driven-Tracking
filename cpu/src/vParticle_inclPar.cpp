@@ -287,6 +287,38 @@ void vParticle::updateWeightSync(double normval)
     weight = weight / normval;
 }
 
+double vParticle::findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c){
+    double line_m = (y - vy) / (x - vx);
+    double line_c = y - x * line_m;
+
+    double y_par = vParticle::findRoots(m*m + (2*m/line_m) + (1/(line_m*line_m)), -2*y - 2*m*m*y - 2*m*(line_c/line_m) + 2*c - 2*(x/line_m) - 2*m*m*(x/line_m) - 2*m*(c/line_m) - 2*(line_c/(line_m*line_m)), y*y + (line_c*line_c/(line_m*line_m)) + x*x + 2*x*(line_c/line_m) + m*m*y*y + m*m*x*x + 2*m*c*(line_c/line_m) - c*c + 2*x*m*m*line_c/line_m);
+    double x_par = (y_par - line_c) / line_m;
+
+    return x_par, y_par;
+}
+
+double vParticle::findRoots(double a, double b, double c){
+    if (a == 0) {
+            // yDebug() << "Invalid";
+            return NULL;
+        }
+    
+    double d = b * b - 4 * a * c;
+    double sqrt_val = sqrt(abs(d));
+
+    if (d > 0) {
+        return (double)(-b + sqrt_val) / (2 * a);
+    }
+    else if (d == 0) {
+        return -(double)b / (2 * a);
+    }
+    else // d < 0
+    {
+        // yDebug() << "Complex";
+        return NULL;
+    }
+}
+
 /*////////////////////////////////////////////////////////////////////////////*/
 //VPARTICLEFILTER
 /*////////////////////////////////////////////////////////////////////////////*/
