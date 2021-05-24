@@ -244,9 +244,9 @@ public:
         if(fdist_par > 3.0 || fdist_par <= -3.0){
             score -=0.1;
             return;}
-        else if(fdist_par <= 2.0 && fdist_par >= -2.0)
+        else if(-2.0 <= fdist_par <= 2.0)
             cval = 1.0;
-        else if (fdist_par > -3.0 && fdist_par < -2.0){
+        else if (-3.0 < fdist_par < -2.0){
             cval = -1.0;
         }
 
