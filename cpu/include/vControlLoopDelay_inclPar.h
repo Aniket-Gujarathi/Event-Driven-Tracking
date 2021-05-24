@@ -116,7 +116,7 @@ public:
     void setResetTimeout(double value);
 
     double findRoots(double a, double b, double c);
-
+    double findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c);
 
     yarp::sig::Vector getTrackingStats();
 

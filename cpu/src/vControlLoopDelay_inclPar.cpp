@@ -509,21 +509,21 @@ void delayControl::run()
                 vector <Point2f> list_point;
 
                 for (int i = px1; i < px2; i++){
-                    
                     // double y_par = (pow((i - avgx), 2) / (avgr)) + avgy;
                     double m = tan(avgtheta*(M_PI / 180));
-                    double y_par = delayControl::findRoots((m*m), (-2*avgy*(1 + m*m) + 2*avgc + 2*m*i), (i*i + i*(-2*avgx*(1 + m*m) - 2*m*avgc) + (avgx*avgx + avgy*avgy)*(1 + m*m) - avgc*avgc));
+                    double y_par = int(delayControl::findRoots((m*m), (-2*avgy*(1 + m*m) + 2*avgc + 2*m*i), (i*i + i*(-2*avgx*(1 + m*m) - 2*m*avgc) + (avgx*avgx + avgy*avgy)*(1 + m*m) - avgc*avgc)));
                     if (y_par == NULL){
                         continue;
                     }
                     double x_par = i;
-                    
+
                     if (y_par > py1 && y_par < py2){
                         Point2f newPt = Point2f(x_par, y_par);
                         list_point.push_back(newPt);
                     }
 
                 }
+
                 Mat curve(list_point, true);
                 curve.convertTo(curve, CV_32S);
                 polylines(cvImg, curve, false, Scalar(255, 255, 255), 2, CV_AA);

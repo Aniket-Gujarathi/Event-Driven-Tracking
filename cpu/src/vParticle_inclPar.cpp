@@ -288,18 +288,35 @@ void vParticle::updateWeightSync(double normval)
 }
 
 double vParticle::findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c){
+    int check = 0;
+    
+    // DIVISION by 0
+    if(x == vx){
+        return NULL, NULL;
+    }
+    
     double line_m = (y - vy) / (x - vx);
+    
+    // Division by 0
+    if (line_m == 0){
+        return NULL, NULL;
+    }
     double line_c = y - x * line_m;
 
-    double y_par = vParticle::findRoots(m*m + (2*m/line_m) + (1/(line_m*line_m)), -2*y - 2*m*m*y - 2*m*(line_c/line_m) + 2*c - 2*(x/line_m) - 2*m*m*(x/line_m) - 2*m*(c/line_m) - 2*(line_c/(line_m*line_m)), y*y + (line_c*line_c/(line_m*line_m)) + x*x + 2*x*(line_c/line_m) + m*m*y*y + m*m*x*x + 2*m*c*(line_c/line_m) - c*c + 2*x*m*m*line_c/line_m);
-    double x_par = (y_par - line_c) / line_m;
+    // For sign of root
+    if (vy > y){
+        check = 1;
+    }
+
+    double y_par = int(vParticle::findRoots(m*m + (2*m/line_m) + (1/(line_m*line_m)), -2*y - 2*m*m*y - 2*m*(line_c/line_m) + 2*c - 2*(x/line_m) - 2*m*m*(x/line_m) - 2*m*(c/line_m) - 2*(line_c/(line_m*line_m)), y*y + (line_c*line_c/(line_m*line_m)) + x*x + 2*x*(line_c/line_m) + m*m*y*y + m*m*x*x + 2*m*c*(line_c/line_m) - c*c + 2*x*m*m*line_c/line_m, check));
+
+    double x_par = int((y_par - line_c) / line_m);
 
     return x_par, y_par;
 }
 
-double vParticle::findRoots(double a, double b, double c){
+double vParticle::findRoots(double a, double b, double c, int check){
     if (a == 0) {
-            // yDebug() << "Invalid";
             return NULL;
         }
     
@@ -307,14 +324,18 @@ double vParticle::findRoots(double a, double b, double c){
     double sqrt_val = sqrt(abs(d));
 
     if (d > 0) {
-        return (double)(-b + sqrt_val) / (2 * a);
+        if (check == 0){
+            return (double)(-b - sqrt_val) / (2 * a);
+        }
+        else if (check == 1){
+            return (double)(-b + sqrt_val) / (2 * a);
+        }        
     }
     else if (d == 0) {
         return -(double)b / (2 * a);
     }
     else // d < 0
     {
-        // yDebug() << "Complex";
         return NULL;
     }
 }

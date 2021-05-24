@@ -164,6 +164,8 @@ private:
 
     double weight;
 
+    double x_par, y_par;
+
 public:
 
     double score;
@@ -190,7 +192,7 @@ public:
 
 
     double findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c);
-    double findRoots(double a, double b, double c);
+    double findRoots(double a, double b, double c, int check);
 
     //update
     void predict(double sigma);
@@ -215,45 +217,38 @@ public:
 
         // distance between the parabola and directrix (2 * a)
         double m = tan(theta*(M_PI / 180));
-        double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
+        // double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
 
         // Find pt of intersection of parabola and foc-ev
-        // double x_par, y_par;
-        // x_par, y_par = vParticle::findIntersection(vx, vy, x, y, r, m, c);
-        // double dist_foc_par = std::fabs(sqrt(pow((x - x_par), 2) + pow((y - y_par), 2)));
+        x_par, y_par = vParticle::findIntersection(vx, vy, x, y, r, m, c);
 
-        // double fdist_par = ((sqrt(pow((vx - x), 2) + pow((vy - y), 2))) - dist_foc_par);
+        if (x_par, y_par == NULL, NULL){
+            return;
+        }
+
+        double dist_foc_par = std::fabs(sqrt(pow((x - x_par), 2) + pow((y - y_par), 2)));
+
+        double fdist_par = ((sqrt(pow((vx - x), 2) + pow((vy - y), 2))) - dist_foc_par);
 
         // distance from focus
-        double dist_focus = sqrt(pow(dx, 2) + pow(dy, 2));
-        double fdist_focus = std::fabs(dist_focus);
+        // double dist_focus = sqrt(pow(dx, 2) + pow(dy, 2));
+        // double fdist_focus = std::fabs(dist_focus);
         
-        // distance from directrix
-        double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
-        double fdist_directrix = std::fabs(dist_directrix);
+        // // distance from directrix
+        // double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
+        // double fdist_directrix = std::fabs(dist_directrix);
 
         // int a = pcb->queryBinNumber((int)dy, (int)dx);
         
-        // double cval = 0;
-        // if(fdist_par > 3.0){
-        //     score -= 0.1;
-        //     return;}
-        // else if(fdist_par < 2.0 && fdist_par > -2.0)
-        //     cval = 1.0;
-        // else if (fdist_par < 3.0 && fdist_par > 2.0){
-        //     cval = -1.0;
-        // }
-
         double cval = 0;
-        if(fdist_focus > 5.0 || dist_par_dir < 5.0)
-            return;
-        else if(fdist_directrix == fdist_focus)
+        if(fdist_par > 3.0 || fdist_par <= -3.0){
+            score -=0.1;
+            return;}
+        else if(fdist_par <= 2.0 && fdist_par >= -2.0)
             cval = 1.0;
-        else if (fdist_directrix < 2.0)
-            cval = -0.5;
-        else if(fdist_directrix > fdist_focus)
-            cval = 0.5;
-
+        else if (fdist_par > -3.0 && fdist_par < -2.0){
+            cval = -1.0;
+        }
 
         if(cval >= 0) {
             double improve = cval;
@@ -272,6 +267,16 @@ public:
         
         return;
 
+
+        // double cval = 0;
+        // if(fdist_focus > 5.0 || dist_par_dir < 5.0)
+        //     return;
+        // else if(fdist_directrix == fdist_focus)
+        //     cval = 1.0;
+        // else if (fdist_directrix < 2.0)
+        //     cval = -0.5;
+        // else if(fdist_directrix > fdist_focus)
+        //     cval = 0.5;
 
         // OPTION Parabola
         // double fsqrd_diff = std::fabs(fsqrd_dir - fsqrd_par);
