@@ -246,8 +246,8 @@ void vParticle::predict(double sigma)
     x = generateUniformNoise(x, sigma);
     y = generateUniformNoise(y, sigma);
     r = generateUniformNoise(r, sigma * 0.2);
-    theta = generateUniformNoise(theta, sigma * 0.2);
-    c = generateUniformNoise(c, sigma * 0.2);
+    theta = generateUniformNoise(theta, sigma*0.2);
+    c = generateUniformNoise(c, sigma*0.2);
 
     if(constrain) checkConstraints();
 }
@@ -312,6 +312,10 @@ double vParticle::findIntersection(int &vx, int &vy, double &x, double &y, doubl
 
     double x_par = int((y_par - line_c) / line_m);
 
+    if (y_par > y + 5){
+        return NULL, NULL;
+    }
+
     return x_par, y_par;
 }
 
@@ -359,10 +363,10 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     this->nRandoms = randoms + 1.0;
     rbound_min = res.width/15;
     rbound_max = res.width;
-    theta_min = -10;
-    theta_max = 10;
-    c_min = -res.height / 6;
-    c_max = res.height / 6;
+    theta_min = -5;
+    theta_max = 5;
+    c_min = 0;
+    c_max = 100;
     pcb.configure(res.height, res.width, rbound_max, bins);
     setSeed(res.width/2.0, res.height/2.0);
 

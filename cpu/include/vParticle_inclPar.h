@@ -222,7 +222,7 @@ public:
         // Find pt of intersection of parabola and foc-ev
         x_par, y_par = vParticle::findIntersection(vx, vy, x, y, r, m, c);
 
-        if (x_par, y_par == NULL, NULL){
+        if (x_par== NULL || y_par == NULL || y_par >= y || x_par > x + 35 || x_par < x - 35){
             return;
         }
 
@@ -240,32 +240,37 @@ public:
 
         // int a = pcb->queryBinNumber((int)dy, (int)dx);
         
-        double cval = 0;
-        if(fdist_par > 3.0 || fdist_par <= -3.0){
+        if(fdist_par > 2.0){
             score -=0.1;
             return;}
-        else if(-2.0 <= fdist_par <= 2.0)
+        
+        double cval = NULL;
+        if(-2.0 <= fdist_par && fdist_par <= 2.0)
             cval = 1.0;
-        else if (-3.0 < fdist_par < -2.0){
+        else if (-3.0 < fdist_par && fdist_par < -2.0){
             cval = -1.0;
         }
 
-        if(cval >= 0) {
-            double improve = cval;
-            if(improve > 0) {
-                // angdist[a] = cval;
-                score += improve;
-                if(score >= likelihood) {
-                    likelihood = score;
-                    nw = n;
-                }
-            }    
-        } 
-        else {
-            score -= negativeScaler;
+        if(cval){
+            if(cval >= 0.0) {
+                double improve = cval;
+                if(improve > 0) {
+                    // angdist[a] = cval;
+                    score += improve;
+                    if(score >= likelihood) {
+                        likelihood = score;
+                        nw = n;
+                    }
+                }    
+            } 
+            else if (cval < 0.0) {
+                score -= 0.5;
+            }
+        }
+        else{
+            return;
         }
         
-        return;
 
 
         // double cval = 0;

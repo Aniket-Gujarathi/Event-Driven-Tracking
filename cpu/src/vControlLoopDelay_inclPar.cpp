@@ -509,12 +509,12 @@ void delayControl::run()
                 vector <Point2f> list_point;
 
                 for (int i = px1; i < px2; i++){
-                    // double y_par = (pow((i - avgx), 2) / (avgr)) + avgy;
                     double m = tan(avgtheta*(M_PI / 180));
-                    double y_par = int(delayControl::findRoots((m*m), (-2*avgy*(1 + m*m) + 2*avgc + 2*m*i), (i*i + i*(-2*avgx*(1 + m*m) - 2*m*avgc) + (avgx*avgx + avgy*avgy)*(1 + m*m) - avgc*avgc)));
+                    double y_par = delayControl::findRoots((m*m), (-2*avgy*(1 + m*m) + 2*avgc + 2*m*i), (i*i + i*(-2*avgx*(1 + m*m) - 2*m*avgc) + (avgx*avgx + avgy*avgy)*(1 + m*m) - avgc*avgc));
                     if (y_par == NULL){
                         continue;
                     }
+                    y_par = int(y_par);
                     double x_par = i;
 
                     if (y_par > py1 && y_par < py2){
