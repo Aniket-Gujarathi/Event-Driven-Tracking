@@ -172,10 +172,10 @@ def  calculate_likelihood_gaussian(image):
                             continue 
                         elif (dist_circ <= r2 and dist_circ >= r2):
                             cval = 1.0
-                        elif (dist_circ > r and dist_circ < r1 - 2.0):
+                        elif (dist_circ > r2 and dist_circ < r1 - 2.0):
                             cval = -0.5
                         elif (dist_circ >= r1 - 2.0 and dist_circ < r1 + 2.0):
-                            cval = 1.0
+                            cval = 0.5
                             
                         if (cval):
                             if(cval >= 0.0): 
