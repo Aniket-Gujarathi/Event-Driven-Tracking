@@ -128,7 +128,7 @@ def  calculate_likelihood_2circles(image):
                         if(dist_circ > r1 + 2.0):
                             # score -= 0.1
                             continue 
-                        elif (dist_circ <= r2 and dist_circ >= r2):
+                        elif (dist_circ <= r2):
                             cval = 1.0
                         elif (dist_circ > r2 and dist_circ < r1 - 2.0):
                             cval = -0.5
