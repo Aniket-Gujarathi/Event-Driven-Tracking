@@ -128,48 +128,6 @@ def  calculate_likelihood_2circles(image):
                         if(dist_circ > r1 + 2.0):
                             # score -= 0.1
                             continue 
-                        elif (dist_circ <= r2 + 1 and dist_circ >= r2 - 1):
-                            cval = 1.0
-                        elif (dist_circ > r2 + 1 and dist_circ < r1 - 2.0):
-                            cval = -0.5
-                        elif (dist_circ >= r1 - 2.0 and dist_circ < r1 + 2.0):
-                            cval = 1.0
-                            
-                        if (cval):
-                            if(cval >= 0.0): 
-                                score += cval
-                                if(score >= likelihood):
-                                    likelihood = score    
-                            elif (cval < 0.0):
-                                score += cval
-
-                    if (score != 0):
-                        # write the data to a txt file
-                        f.write(str(x_c) + " " + str(y_c) + " " + str(r1) + " " + str(r2) + " " + str(score) + " " + str(likelihood) + "\n")
-
-def  calculate_likelihood_gaussian(image):
-    
-    height, width, _ = image.shape
-    f = open("test_648_DoGTest.txt", "w")
-    idx = np.where(np.any(image != [0, 0, 0], axis=-1)) # ids of events in the image
-    
-    for x_c in tqdm(range(95, 278, 5)): # all possible Xc state
-        for y_c in tqdm(range(53, 217, 5)): # all possible Yc state
-            for sd1 in range(20, 35, 5): # all possible radius state
-                for r2 in range(5, 15, 5): # all possible radius state
-                    score = 0
-                    likelihood = 3 # min likelihood
-                    for i in range(0, idx[0].size, 10):
-                        vx = idx[1][i]
-                        vy = idx[0][i]
-
-                        dist_circ = (np.sqrt((x_c - vx)**2 + (y_c - vy)**2))
-                        # dist_circ2 = (np.sqrt((x_c - vx)**2 + (y_c - vy)**2) - r2)                    
-                        
-                        cval = None
-                        if(dist_circ > r1 + 2.0):
-                            # score -= 0.1
-                            continue 
                         elif (dist_circ <= r2 and dist_circ >= r2):
                             cval = 1.0
                         elif (dist_circ > r2 and dist_circ < r1 - 2.0):
@@ -188,6 +146,7 @@ def  calculate_likelihood_gaussian(image):
                     if (score != 0):
                         # write the data to a txt file
                         f.write(str(x_c) + " " + str(y_c) + " " + str(r1) + " " + str(r2) + " " + str(score) + " " + str(likelihood) + "\n")
+
 
 if __name__ == '__main__':
     img_path = argv[1]
