@@ -57,7 +57,7 @@ public:
         offsety = 0;
     }
 
-    void configure(int height, int width, double maxrad, int nBins)
+    void configure(int height, int width, int nBins, double maxrad=0)
     {
         rows = (height + maxrad) * 2 + 1;
         cols = (width + maxrad) * 2 + 1;
@@ -116,7 +116,7 @@ public:
 
     projectedModel();
 
-    void initialiseCircle(int r);
+    void initialiseCircle(int r=0);
 
     inline double query(int x, int y);
 
@@ -142,7 +142,7 @@ private:
     bool constrain;
     int minx, maxx;
     int miny, maxy;
-    int minr, maxr;
+    // int minr, maxr;
     int mintheta, maxtheta;
     int minc, maxc;
 
@@ -158,7 +158,7 @@ private:
     //state and weight
     double x;
     double y;
-    double r;
+    // double r;
     double theta;
     double c;
 
@@ -179,19 +179,19 @@ public:
     void updateMinLikelihood(double value);
     void attachPCB(preComputedBins *pcb) { this->pcb = pcb; }
 
-    void initialiseState(double x, double y, double r, double theta, double c);
-    void randomise(int x, int y, int r, int theta, int c);
+    void initialiseState(double x, double y, double theta, double c);
+    void randomise(int x, int y, int theta, int c);
 
     void resetWeight(double value);
-    void resetRadius(double value);
+    // void resetRadius(double value);
     void resetArea();
-    void setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc);
+    void setContraints(int minx, int maxx, int miny, int maxy, int mintheta, int maxtheta, int minc, int maxc);
     void checkConstraints();
     void setNegativeBias(double value);
     void setInlierParameter(double value);
 
 
-    double findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c);
+    double findIntersection(int &vx, int &vy, double &x, double &y, double &m, double &c);
     double findRoots(double a, double b, double c, int check);
 
     //update
@@ -215,41 +215,68 @@ public:
         double dx = vx - x;
         double dy = vy - y;
 
-        // distance between the parabola and directrix (2 * a)
+        // // distance between the parabola and directrix (2 * a)
         double m = tan(theta*(M_PI / 180));
-        // double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
+        double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
 
         // Find pt of intersection of parabola and foc-ev
-        x_par, y_par = vParticle::findIntersection(vx, vy, x, y, r, m, c);
+        // if (vy > y){
+        //     return;
+        // }
+        // x_par, y_par = vParticle::findIntersection(vx, vy, x, y, m, c);
 
-        if (x_par== NULL || y_par == NULL || y_par >= y || x_par > x + 35 || x_par < x - 35){
-            return;
-        }
+        // if (x_par== NULL || y_par == NULL || x_par > x + 65 || x_par < x - 65){
+        //     return;
+        // }
 
-        double dist_foc_par = std::fabs(sqrt(pow((x - x_par), 2) + pow((y - y_par), 2)));
+        // double dist_foc_par = std::fabs(sqrt(pow((x - x_par), 2) + pow((y - y_par), 2)));
 
-        double fdist_par = ((sqrt(pow((vx - x), 2) + pow((vy - y), 2))) - dist_foc_par);
+        // double fdist_par = ((sqrt(pow((vx - x), 2) + pow((vy - y), 2))) - dist_foc_par);
 
-        // distance from focus
-        // double dist_focus = sqrt(pow(dx, 2) + pow(dy, 2));
-        // double fdist_focus = std::fabs(dist_focus);
+        // // distance from focus
+        double dist_focus = sqrt(pow(dx, 2) + pow(dy, 2));
+        double fdist_focus = std::fabs(dist_focus);
         
         // // distance from directrix
-        // double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
-        // double fdist_directrix = std::fabs(dist_directrix);
+        double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
+        double fdist_directrix = std::fabs(dist_directrix);
 
         // int a = pcb->queryBinNumber((int)dy, (int)dx);
         
-        if(fdist_par > 2.0){
-            score -=0.1;
-            return;}
+        // if(fdist_par > 60.0 || fdist_par < -60.0 || vy < m*vx + c){
+        //     return;}
         
+        // double cval = NULL;
+        // if(fdist_par >= -5.0 && fdist_par <= 5.0)
+        //     cval = 1.0;
+        // else if (20.0 > fdist_par && fdist_par > 5.0){
+        //     cval = -((fdist_par - 2) / 18);
+        // }
+
+        ////// parabola conditions for focus-directrix //////
+        double dist_diff = std::fabs(fdist_directrix - fdist_focus);
         double cval = NULL;
-        if(-2.0 <= fdist_par && fdist_par <= 2.0)
+        if(fdist_focus > 60.0 || dist_par_dir < 15.0 || vy < m*vx + c || vy > y + 10)
+            return;
+        else if(dist_diff <= 10.0)
             cval = 1.0;
-        else if (-3.0 < fdist_par && fdist_par < -2.0){
+        else if (fdist_directrix < 5.0)
             cval = -1.0;
-        }
+        else if(fdist_directrix > fdist_focus)
+            cval = 0.1;
+        else if(fdist_directrix < fdist_focus)
+            cval = -0.1;
+        
+        // double dist_diff = (fdist_directrix - fdist_focus);
+        // double cval = NULL;
+        // if(fdist_focus > 20.0 || dist_par_dir < 20.0 || vy < m*vx + c)
+        //     return;
+        // else if(dist_diff <= 5.0 && dist_diff >= -5.0)
+        //     cval = 1.0;
+        // else if (dist_diff < -5.0 && dist_diff > -20.0)
+        //     cval = -0.5;
+        // else if(dist_diff > 2.0 && dist_diff < 3.0)
+        //     cval = 0.5;
 
         if(cval){
             if(cval >= 0.0) {
@@ -264,25 +291,14 @@ public:
                 }    
             } 
             else if (cval < 0.0) {
-                score -= 0.5;
+                score += cval;
             }
         }
         else{
             return;
         }
         
-
-
-        // double cval = 0;
-        // if(fdist_focus > 5.0 || dist_par_dir < 5.0)
-        //     return;
-        // else if(fdist_directrix == fdist_focus)
-        //     cval = 1.0;
-        // else if (fdist_directrix < 2.0)
-        //     cval = -0.5;
-        // else if(fdist_directrix > fdist_focus)
-        //     cval = 0.5;
-
+        
         // OPTION Parabola
         // double fsqrd_diff = std::fabs(fsqrd_dir - fsqrd_par);
         // double cval = 0;
@@ -356,7 +372,7 @@ public:
     inline int    getid() { return id; }
     inline double getx()  { return x; }
     inline double gety()  { return y; }
-    inline double getr()  { return r; }
+    // inline double getr()  { return r; }
     inline double gettheta()  { return theta; }
     inline double getc()  { return c; }
     inline double getw()  { return weight; }
@@ -407,7 +423,7 @@ private:
     ev::resolution res;
     bool adaptive;
     int bins;
-    int seedx, seedy, seedr, seedtheta, seedc;
+    int seedx, seedy, seedtheta, seedc;
     double nRandoms;
 
     //data
@@ -419,8 +435,8 @@ private:
 
     //variables
     double pwsumsq;
-    int rbound_min;
-    int rbound_max;
+    // int rbound_min;
+    // int rbound_max;
     int theta_min;
     int theta_max;
     int c_min;
@@ -436,7 +452,7 @@ public:
                     int bins, bool adaptive, int nthreads, double minlikelihood,
                     double inlierThresh, double randoms, double negativeBias);
 
-    void setSeed(int x, int y, int r = 0, int theta = 0, int c = 0);
+    void setSeed(int x, int y, int theta = 0, int c = 0);
     void resetToSeed();
     void setMinLikelihood(double value);
     void setInlierParameter(double value);
@@ -444,7 +460,7 @@ public:
     void setAdaptive(bool value = true);
 
     void performObservation(const deque<AE> &q);
-    void extractTargetPosition(double &x, double &y, double &r, double &theta, double &c);
+    void extractTargetPosition(double &x, double &y, double &theta, double &c);
     void extractTargetWindow(double &tw);
     void performResample();
     void performPrediction(double sigma);

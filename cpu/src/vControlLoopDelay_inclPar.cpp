@@ -121,7 +121,7 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
     attach(rpcPort);
 
     //options and parameters
-    px = py = pr = 0;
+    px = py = 0;
     res.height = rf.check("height", Value(480)).asInt();
     res.width = rf.check("width", Value(640)).asInt();
     gain = rf.check("gain", Value(0.0005)).asDouble();
@@ -149,13 +149,12 @@ bool delayControl::configure(yarp::os::ResourceFinder &rf)
                    rf.check("negbias", yarp::os::Value(10.0)).asDouble());
 
     yarp::os::Bottle * seed = rf.find("seed").asList();
-    if(seed && seed->size() == 5) {
+    if(seed && seed->size() == 4) {
         yInfo() << "Setting initial seed state:" << seed->toString();
         vpf.setSeed(seed->get(0).asDouble(),
                     seed->get(1).asDouble(),
                     seed->get(2).asDouble(),
-                    seed->get(3).asDouble(),
-                    seed->get(4).asDouble());
+                    seed->get(3).asDouble());
         vpf.resetToSeed();
     }
 
@@ -208,17 +207,17 @@ void delayControl::setTrueThreshold(double value)
     detectionThreshold = value * maxRawLikelihood;
 }
 
-void delayControl::performReset(int x, int y, int r, int theta, int c)
+void delayControl::performReset(int x, int y, int theta, int c)
 {
     if(x > 0)
-        vpf.setSeed(x, y, r, theta, c);
+        vpf.setSeed(x, y, theta, c);
     vpf.resetToSeed();
     input_port.resume();
 }
 
 yarp::sig::Vector delayControl::getTrackingStats()
 {
-    yarp::sig::Vector stats(12);
+    yarp::sig::Vector stats(11);
 
     stats[0] = 1000*input_port.queryDelayT();
     stats[1] = 1.0/filterPeriod;
@@ -226,12 +225,11 @@ yarp::sig::Vector delayControl::getTrackingStats()
     stats[3] = input_port.queryRate() / 1000.0;
     stats[4] = dx;
     stats[5] = dy;
-    stats[6] = dr;
-    stats[7] = vpf.maxlikelihood / (double)maxRawLikelihood;
-    stats[8] = cpuusage.getProcessorUsage();
-    stats[9] = qROI.n;
-    stats[10] = dtheta;
-    stats[11] = dc;
+    stats[6] = vpf.maxlikelihood / (double)maxRawLikelihood;
+    stats[7] = cpuusage.getProcessorUsage();
+    stats[8] = qROI.n;
+    stats[9] = dtheta;
+    stats[10] = dc;
 
     return stats;
 }
@@ -275,7 +273,7 @@ void delayControl::run()
     //START HERE!!
     const vector<AE> *q = input_port.read(ystamp);
     if(!q || Thread::isStopping()) return;
-    vpf.extractTargetPosition(avgx, avgy, avgr, avgtheta, avgc);
+    vpf.extractTargetPosition(avgx, avgy, avgtheta, avgc);
     // std::cout << "-----check avgr----" << avgr << std::endl;
 
     channel = q->front().getChannel();
@@ -284,7 +282,7 @@ void delayControl::run()
         //calculate error
         double delay = input_port.queryDelayT();
         unsigned int unprocdqs = input_port.queryunprocessed();
-        targetproc = M_PI * avgr;
+        targetproc = M_PI * 20;
         if(unprocdqs > 1 && delay > gain)
             targetproc *= (delay / gain);
 
@@ -328,10 +326,10 @@ void delayControl::run()
         Tlikelihood = yarp::os::Time::now() - Tlikelihood;
 
         //set our new position
-        dx = avgx, dy = avgy, dr = avgr, dtheta=avgtheta, dc = avgc;
-        vpf.extractTargetPosition(avgx, avgy, avgr, avgtheta, avgc);
-        dx = avgx - dx; dy = avgy - dy; dr = avgr - dr; dtheta = avgtheta - dtheta; dc = avgc - dc;
-        double roisize = avgr + 10;
+        dx = avgx, dy = avgy, dtheta=avgtheta, dc = avgc;
+        vpf.extractTargetPosition(avgx, avgy, avgtheta, avgc);
+        dx = avgx - dx; dy = avgy - dy; dtheta = avgtheta - dtheta; dc = avgc - dc;
+        double roisize = 80;
         qROI.setROI(avgx - roisize - 30, avgx + roisize + 30, avgy - roisize - 10, avgy + roisize + 10);
 
         //set our new window #events
@@ -384,7 +382,7 @@ void delayControl::run()
         if(dpos > output_sample_delta) {
             px = avgx;
             py = avgy;
-            pr = avgr;
+            // pr = avgr;
             ptheta = avgtheta;
             pc = avgc;
             //output our event
@@ -394,7 +392,7 @@ void delayControl::run()
                 ceg->setChannel(channel);
                 ceg->x = avgx;
                 ceg->y = avgy;
-                ceg->sigx = avgr;
+                ceg->sigx = 20;
                 ceg->sigy = tw;
                 ceg->sigxy = 1.0;
                 if(vpf.maxlikelihood > detectionThreshold)
@@ -416,7 +414,7 @@ void delayControl::run()
                 next_sample.addDouble(Time::now());
                 next_sample.addDouble(avgx);
                 next_sample.addDouble(avgy);
-                next_sample.addDouble(avgr);
+                // next_sample.addDouble(avgr);
                 next_sample.addDouble(avgtheta);
                 next_sample.addDouble(avgc);
                 next_sample.addDouble(channel);
@@ -511,7 +509,7 @@ void delayControl::run()
                 for (int i = px1; i < px2; i++){
                     double m = tan(avgtheta*(M_PI / 180));
                     double y_par = delayControl::findRoots((m*m), (-2*avgy*(1 + m*m) + 2*avgc + 2*m*i), (i*i + i*(-2*avgx*(1 + m*m) - 2*m*avgc) + (avgx*avgx + avgy*avgy)*(1 + m*m) - avgc*avgc));
-                    if (y_par == NULL){
+                    if (y_par == NULL || y_par > avgy){
                         continue;
                     }
                     y_par = int(y_par);
@@ -528,6 +526,7 @@ void delayControl::run()
                 curve.convertTo(curve, CV_32S);
                 polylines(cvImg, curve, false, Scalar(255, 255, 255), 2, CV_AA);
 
+                
                 panelnumber++;
             }
 

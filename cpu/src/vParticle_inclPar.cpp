@@ -189,25 +189,25 @@ vParticle& vParticle::operator=(const vParticle &rhs)
 {
     this->x = rhs.x;
     this->y = rhs.y;
-    this->r = rhs.r;
+    // this->r = rhs.r;
     this->theta = rhs.theta;
     this->c = rhs.c;
     this->weight = rhs.weight;
     return *this;
 }
 
-void vParticle::initialiseState(double x, double y, double r, double theta, double c)
+void vParticle::initialiseState(double x, double y, double theta, double c)
 {
     this->x = x;
     this->y = y;
-    this->r = r;
+    // this->r = r;
     this->theta = theta;
     this->c = c;
 }
 
-void vParticle::randomise(int x, int y, int r, int theta, int c)
+void vParticle::randomise(int x, int y, int theta, int c)
 {
-    initialiseState(rand()%x, rand()%y, rand()%r, rand()%theta, rand()%c);
+    initialiseState(rand()%x, rand()%y, rand()%theta, rand()%c);
 }
 
 void vParticle::resetWeight(double value)
@@ -215,11 +215,11 @@ void vParticle::resetWeight(double value)
     this->weight = value;
 }
 
-void vParticle::resetRadius(double value)
-{
-    this->r = value;
-    //resetArea();
-}
+// void vParticle::resetRadius(double value)
+// {
+//     this->r = value;
+//     //resetArea();
+// }
 
 void vParticle::setNegativeBias(double value)
 {
@@ -233,7 +233,7 @@ void vParticle::setInlierParameter(double value)
 
 void vParticle::resetArea()
 {
-    negativeScaler = negativeBias * angbuckets / (M_PI * r * r);
+    negativeScaler = negativeBias * angbuckets / (M_PI * 20 * 20);
 }
 
 void vParticle::predict(double sigma)
@@ -245,21 +245,21 @@ void vParticle::predict(double sigma)
 
     x = generateUniformNoise(x, sigma);
     y = generateUniformNoise(y, sigma);
-    r = generateUniformNoise(r, sigma * 0.2);
+    // r = generateUniformNoise(r, sigma * 0.2);
     theta = generateUniformNoise(theta, sigma*0.2);
     c = generateUniformNoise(c, sigma*0.2);
 
     if(constrain) checkConstraints();
 }
 
-void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int minr, int maxr, int mintheta, int maxtheta, int minc, int maxc)
+void vParticle::setContraints(int minx, int maxx, int miny, int maxy, int mintheta, int maxtheta, int minc, int maxc)
 {
     this->minx = minx;
     this->maxx = maxx;
     this->miny = miny;
     this->maxy = maxy;
-    this->minr = minr;
-    this->maxr = maxr;
+    // this->minr = minr;
+    // this->maxr = maxr;
     this->mintheta = mintheta;
     this->maxtheta = maxtheta;
     this->minc = minc;
@@ -272,8 +272,8 @@ void vParticle::checkConstraints()
     if(x > maxx) x = maxx;
     if(y < miny) y = miny;
     if(y > maxy) y = maxy;
-    if(r < minr) r = minr;
-    if(r > maxr) r = maxr;
+    // if(r < minr) r = minr;
+    // if(r > maxr) r = maxr;
     if(theta < mintheta) theta = mintheta;
     if(theta > maxtheta) theta = maxtheta;
     if(c < minc) c = minc;
@@ -287,7 +287,7 @@ void vParticle::updateWeightSync(double normval)
     weight = weight / normval;
 }
 
-double vParticle::findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c){
+double vParticle::findIntersection(int &vx, int &vy, double &x, double &y, double &m, double &c){
     int check = 0;
     
     // DIVISION by 0
@@ -312,9 +312,9 @@ double vParticle::findIntersection(int &vx, int &vy, double &x, double &y, doubl
 
     double x_par = int((y_par - line_c) / line_m);
 
-    if (y_par > y + 5){
-        return NULL, NULL;
-    }
+    // if (y_par > y + 5){
+    //     return NULL, NULL;
+    // }
 
     return x_par, y_par;
 }
@@ -361,13 +361,13 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     this->adaptive = adaptive;
     this->nthreads = nthreads;
     this->nRandoms = randoms + 1.0;
-    rbound_min = res.width/15;
-    rbound_max = res.width;
+    // rbound_min = res.width/15;
+    // rbound_max = res.width;
     theta_min = -5;
     theta_max = 5;
     c_min = 0;
     c_max = 100;
-    pcb.configure(res.height, res.width, rbound_max, bins);
+    pcb.configure(res.height, res.width, bins);
     setSeed(res.width/2.0, res.height/2.0);
 
     ps.clear();
@@ -391,7 +391,7 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     vParticle p;
     p.attachPCB(&pcb);
     p.resetWeight(1.0/nparticles);
-    p.setContraints(0, res.width, 0, res.height, rbound_min, rbound_max, theta_min, theta_max, c_min, c_max);
+    p.setContraints(0, res.width, 0, res.height, theta_min, theta_max, c_min, c_max);
     for(int i = 0; i < this->nparticles; i++) {
         p.initialiseParameters(i, minlikelihood, negativeBias, inlierThresh, 0, bins);
         ps.push_back(p);
@@ -401,20 +401,20 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     resetToSeed();
 }
 
-void vParticlefilter::setSeed(int x, int y, int r, int theta, int c)
+void vParticlefilter::setSeed(int x, int y, int theta, int c)
 {
-    seedx = x; seedy = y; seedr = r; seedtheta = theta; seedc = c;
+    seedx = x; seedy = y; seedtheta = theta; seedc = c;
 }
 
 void vParticlefilter::resetToSeed()
 {
-    if(seedr) {
+    if(seedx) {
         for(int i = 0; i < nparticles; i++) {
-            ps[i].initialiseState(seedx, seedy, seedr, seedtheta, seedc);
+            ps[i].initialiseState(seedx, seedy, seedtheta, seedc);
         }
     } else {
         for(int i = 0; i < nparticles; i++) {
-            ps[i].initialiseState(220, 110, 50, 6, 80);
+            ps[i].initialiseState(220, 110, 6, 80);
         }
     }
 }
@@ -486,15 +486,15 @@ void vParticlefilter::performObservation(const deque<AE> &q)
 
 }
 
-void vParticlefilter::extractTargetPosition(double &x, double &y, double &r, double &theta, double &c)
+void vParticlefilter::extractTargetPosition(double &x, double &y, double &theta, double &c)
 {
-    x = 0; y = 0; r = 0; theta = 0; c = 0;
+    x = 0; y = 0; theta = 0; c = 0;
 
     for(int i = 0; i < nparticles; i++) {
         double w = ps[i].getw();
         x += ps[i].getx() * w;
         y += ps[i].gety() * w;
-        r += ps[i].getr() * w;
+        // r += ps[i].getr() * w;
         theta += ps[i].gettheta() * w;
         c += ps[i].getc() * w;
     }
@@ -527,7 +527,7 @@ void vParticlefilter::performResample()
         for(int i = 0; i < nparticles; i++) {
             double rn = nRandoms * (double)rand() / RAND_MAX;
             if(rn > 1.0){
-                ps[i].randomise(res.width, res.height, rbound_max, theta_max, c_max);
+                ps[i].randomise(res.width, res.height, theta_max, c_max);
             }
             else {
                 int j = 0;
