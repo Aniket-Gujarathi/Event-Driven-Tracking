@@ -169,6 +169,8 @@ private:
 
     double weight;
 
+    double x_par, y_par;
+
 public:
 
     double score;
@@ -193,6 +195,8 @@ public:
     void setNegativeBias(double value);
     void setInlierParameter(double value);
 
+    double findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c);
+    double findRoots(double a, double b, double c, int check);
 
     //update
     void predict(double sigma);
@@ -219,46 +223,49 @@ public:
         double dxc = vx - xc;
         double dyc = vy - yc;
 
-        // distance between the circle centre and parabola focus
-        // double dist_centres = std::fabs(pcb->queryDistance((yc - y), (xc - x)));
-        double dist_centres = std::fabs(sqrt(pow((xc - x), 2) + pow((yc - y), 2)));
-        
-        // distance between the parabola and directrix (2 * a)
         double m = tan(theta*(M_PI / 180));
-        double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
+        
 
         // distance from circle (boundary)
-        // double dist_circ = pcb->queryDistance((int)dyc, (int)dxc) - r;
         double dist_circ = sqrt(dyc*dyc + dxc*dxc) - r;
-        double fdist_circ = std::fabs(dist_circ);
+        
+        // distance between the circle centre and parabola focus
+        double dist_centres = std::fabs(sqrt(pow((xc - x), 2) + pow((yc - y), 2)));
+        
+        // // distance between the parabola and directrix (2 * a)
+        double dist_par_dir = std::fabs((m * x - y + c) / (sqrt(1 + pow(m, 2)))) / 2.0;
 
-        // distance from focus
-        // double dist_focus = pcb->queryDistance((int)dy, (int)dx);
-        double dist_focus = sqrt(dy*dy + dx*dx);
+        // // distance from focus
+        double dist_focus = sqrt(pow(dx, 2) + pow(dy, 2));
         double fdist_focus = std::fabs(dist_focus);
         
-        // distance from directrix
+        // // distance from directrix
         double dist_directrix = (m * vx - vy + c) / (sqrt(1 + pow(m, 2)));
         double fdist_directrix = std::fabs(dist_directrix);
 
         int a = pcb->queryBinNumber((int)dyc, (int)dxc);
-   
-        double cval = 0;
-        
-        if(fdist_focus > 10.0 || dist_par_dir < 5.0 || dist_centres > 5.0 || vy < m * vx + c)
+
+        double dist_diff = std::fabs(fdist_directrix - fdist_focus);
+        double cval = NULL;
+
+        if(fdist_focus > 60.0 || dist_par_dir < 15.0 || vy < m*vx + c || dist_centres > 80 || vy > y + 50)
             return;
-        else if(fdist_directrix == fdist_focus || fdist_circ <= 1.0)
+        else if(dist_diff <= 10.0 && -2.0 <= dist_circ && dist_circ <= 2.0)
             cval = 1.0;
-        else if (fdist_directrix < 2.0)
-            cval = -0.5;
-        else if(fdist_directrix > fdist_focus || fdist_circ < 1.0 + inlierParameter)
+        else if (fdist_directrix < 5.0 && -3.0 <= dist_circ && dist_circ < -2.0)
+            cval = -1.0;
+        else if(fdist_directrix > fdist_focus)
             cval = 0.5;
+        else if(fdist_directrix < fdist_focus)
+            cval = -0.5;
+        
         
         if(cval) {
-            // double improve = cval - angdist[a];
-            double improve = cval;
-            if(improve > 0) {
-                // angdist[a] = cval;
+            if (cval >= 0.0){
+            double improve = cval - angdist[a];
+            // double improve = cval;
+            if(improve > 0.0) {
+                angdist[a] = cval;
                 score += improve;
                 if(score >= likelihood) {
                     // yDebug() << score << likelihood;
@@ -267,11 +274,14 @@ public:
                 }
             }
             
-        } else {
-            score -= negativeScaler;
+            } else if (cval < 0.0){
+                score += cval;
+            }
+        }
+        else{
+            return;
         }
         
-        return;
 
 
         // OPTION Parabola

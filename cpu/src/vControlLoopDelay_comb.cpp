@@ -313,8 +313,8 @@ void delayControl::run()
         dx = avgx, dy = avgy, dr = avgr, dtheta=avgtheta, dc = avgc, dxc = avgxc, dyc = avgyc;
         vpf.extractTargetPosition(avgx, avgy, avgr, avgtheta, avgc, avgxc, avgyc);
         dx = avgx - dx; dy = avgy - dy; dr = avgr - dr; dtheta = avgtheta - dtheta; dc = avgc - dc; dxc = avgxc - dxc; dyc = avgyc - dyc;
-        double roisize = avgr + 10;
-        qROI.setROI(avgxc - roisize, avgxc + roisize, avgyc - roisize, avgyc + roisize);
+        double roisize = 80;
+        qROI.setROI(avgx - roisize - 30, avgx + roisize + 30, avgy - roisize - 10, avgy + roisize + 10);
 
         //set our new window #events
         if(!batch_size) {
@@ -491,15 +491,15 @@ void delayControl::run()
                 cv::Mat cvImg = yarp::cv::toCvMat(image);
                 
                 vector <Point2f> list_point;
-                vector <Point2f> list_point_dir;
+                // vector <Point2f> list_point_dir;
 
                 for (int i = px1; i < px2; i++){
                     
                     // double y_par = (pow((i - avgx), 2) / (avgr)) + avgy;
                     double m = tan(avgtheta*(M_PI / 180));
                     double y_par = delayControl::findRoots((m*m), (-2*avgy*(1 + m*m) + 2*avgc + 2*m*i), (i*i + i*(-2*avgx*(1 + m*m) - 2*m*avgc) + (avgx*avgx + avgy*avgy)*(1 + m*m) - avgc*avgc));
-                    double y_directrix = m*i + avgc;
-                    if (y_par == NULL){
+                    // double y_directrix = m*i + avgc;
+                    if (y_par == NULL || y_par > avgy + 10){
                         continue;
                     }
                     double x_par = i;
@@ -508,19 +508,19 @@ void delayControl::run()
                         list_point.push_back(newPt);
                         }
 
-                    if (py1<y_directrix<py2){
-                        Point2f newPtDir = Point2f(i, y_directrix);
-                        list_point_dir.push_back(newPtDir);
-                    }
+                    // if (py1<y_directrix<py2){
+                    //     Point2f newPtDir = Point2f(i, y_directrix);
+                    //     list_point_dir.push_back(newPtDir);
+                    // }
                     
                 }
                 Mat curve(list_point, true);
                 curve.convertTo(curve, CV_32S);
                 polylines(cvImg, curve, false, Scalar(255, 255, 255), 2, CV_AA);
                 
-                Mat directrix(list_point_dir, true);
-                directrix.convertTo(directrix, CV_32S);
-                polylines(cvImg, directrix, false, Scalar(255, 255, 255), 2, CV_AA);
+                // Mat directrix(list_point_dir, true);
+                // directrix.convertTo(directrix, CV_32S);
+                // polylines(cvImg, directrix, false, Scalar(255, 255, 255), 2, CV_AA);
 
                 if (px1<avgxc<px2 && py1<avgyc<py2){
                     cv::circle(cvImg, Point(avgxc, avgyc), avgr, (255, 255, 255), 2);

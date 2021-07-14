@@ -301,6 +301,64 @@ void vParticle::updateWeightSync(double normval)
     weight = weight / normval;
 }
 
+double vParticle::findIntersection(int &vx, int &vy, double &x, double &y, double &r, double &m, double &c){
+    int check = 0;
+    
+    // DIVISION by 0
+    if(x == vx){
+        return NULL, NULL;
+    }
+    
+    double line_m = (y - vy) / (x - vx);
+    
+    // Division by 0
+    if (line_m == 0){
+        return NULL, NULL;
+    }
+    double line_c = y - x * line_m;
+
+    // For sign of root
+    if (vy > y){
+        check = 1;
+    }
+
+    double y_par = int(vParticle::findRoots(m*m + (2*m/line_m) + (1/(line_m*line_m)), -2*y - 2*m*m*y - 2*m*(line_c/line_m) + 2*c - 2*(x/line_m) - 2*m*m*(x/line_m) - 2*m*(c/line_m) - 2*(line_c/(line_m*line_m)), y*y + (line_c*line_c/(line_m*line_m)) + x*x + 2*x*(line_c/line_m) + m*m*y*y + m*m*x*x + 2*m*c*(line_c/line_m) - c*c + 2*x*m*m*line_c/line_m, check));
+
+    double x_par = int((y_par - line_c) / line_m);
+
+    if (y_par > y + 5){
+        return NULL, NULL;
+    }
+
+    return x_par, y_par;
+}
+
+double vParticle::findRoots(double a, double b, double c, int check){
+    if (a == 0) {
+            return NULL;
+        }
+    
+    double d = b * b - 4 * a * c;
+    double sqrt_val = sqrt(abs(d));
+
+    if (d > 0) {
+        if (check == 0){
+            return (double)(-b - sqrt_val) / (2 * a);
+        }
+        else if (check == 1){
+            return (double)(-b + sqrt_val) / (2 * a);
+        }        
+    }
+    else if (d == 0) {
+        return -(double)b / (2 * a);
+    }
+    else // d < 0
+    {
+        return NULL;
+    }
+}
+
+
 /*////////////////////////////////////////////////////////////////////////////*/
 //VPARTICLEFILTER
 /*////////////////////////////////////////////////////////////////////////////*/
@@ -318,12 +376,12 @@ void vParticlefilter::initialise(int width, int height, int nparticles,
     this->adaptive = adaptive;
     this->nthreads = nthreads;
     this->nRandoms = randoms + 1.0;
-    rbound_min = res.width/31;
+    rbound_min = res.width/35;
     rbound_max = res.width/20;  
-    theta_min = -10;
-    theta_max = 10;
-    c_min = -res.height/2.0;
-    c_max = res.height/2.0;
+    theta_min = -5;
+    theta_max = 5;
+    c_min = 0;
+    c_max = 100;
     pcb.configure(res.height, res.width, rbound_max, bins);
     setSeed(res.width/2.0, res.height/2.0);
 
