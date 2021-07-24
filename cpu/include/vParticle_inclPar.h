@@ -256,16 +256,16 @@ public:
         ////// parabola conditions for focus-directrix //////
         double dist_diff = std::fabs(fdist_directrix - fdist_focus);
         double cval = NULL;
-        if(fdist_focus > 60.0 || dist_par_dir < 15.0 || vy < m*vx + c || vy > y + 10)
+        if(fdist_focus > 60.0 || dist_par_dir < 5.0 || vy < m*vx + c || vy > y + 10)
             return;
         else if(dist_diff <= 10.0)
             cval = 1.0;
         else if (fdist_directrix < 5.0)
-            cval = -1.0;
+            cval = -0.8;
         else if(fdist_directrix > fdist_focus)
-            cval = 0.1;
+            cval = 0.3;
         else if(fdist_directrix < fdist_focus)
-            cval = -0.1;
+            cval = -0.3;
         
         // double dist_diff = (fdist_directrix - fdist_focus);
         // double cval = NULL;
