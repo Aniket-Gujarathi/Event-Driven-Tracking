@@ -256,8 +256,8 @@ def calculate_likelihood_parDir(image, filename):
         
         height, width, _ = image.shape
         file = open(filename, "w")
-        for x_c in tqdm(range(150, 324, 5)): # all possible Xc state
-            for y_c in tqdm(range(56, 186, 5)): # all possible Yc state
+        for x_c in (range(219, 311, 5)): # all possible Xc state
+            for y_c in (range(88, 152, 5)): # all possible Yc state
                 for theta in range(-6, 6): # all possible radius state
                     for c in range(60, 100, 10): # all possible radius state
                         m = np.tan(theta * np.pi / 180)
@@ -280,9 +280,9 @@ def calculate_likelihood_parDir(image, filename):
                             #     pts.append([i, int(yl)])
                                 
                             cval = None
-                            if(dist_focus > 60.0 or dist_par_dir < 15.0 or vy < m*vx + c or vy > y_c + 10):
+                            if(dist_focus > 60.0 or dist_par_dir < 5.0 or vy < m*vx + c or vy > y_c + 10):
                                 continue
-                            elif(dist_diff <= 10):
+                            elif(dist_diff <= 10.0):
                                 cval = 1.0
                                 # cv2.circle(image, (vx, vy), 0, [0, 0, 0], 5)
                                 # cv2.line(image, (vx, vy), (x_c, y_c), [255, 100, 0], 2)
@@ -291,11 +291,11 @@ def calculate_likelihood_parDir(image, filename):
                                 # cv2.imshow('a', image)
                                 # cv2.waitKey(1)
                             elif (dist_directrix < 5.0):
-                                cval = -1.0
+                                cval = -0.8
                             elif(dist_directrix > dist_focus):
-                                cval = 0.1
+                                cval = 0.3
                             elif(dist_directrix < dist_focus):
-                                cval = -0.1
+                                cval = -0.3
 
                             if(cval):
                                 if(cval >= 0.0):

@@ -212,7 +212,28 @@ class Parabola():
         cv2.imshow('i', image)
         cv2.waitKey(0)
 
-                            
+ix,iy = -1, -1
+pts_para = []
+def click_event(event, x, y, flags, params):
+    # checking for left mouse clicks
+    global ix, iy
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        # displaying the coordinates
+        # on the Shell
+        #print(x, ' ', y)
+        ix = x
+        iy = y
+
+        # displaying the coordinates
+        # on the image window
+        # font = cv2.FONT_HERSHEY_SIMPLEX
+        # cv2.putText(image, str(x) + ',' +
+        #             str(y), (x,y), font,
+        #             1, (255, 0, 0), 2)
+        cv2.circle(image, (ix, iy), 0, [0, 0, 0], 5)
+        pts_para.append([ix, iy])
+        cv2.imshow('image', image)                         
     
                                       
 
@@ -221,10 +242,18 @@ if __name__ == "__main__":
     image = cv2.imread(filename)
     image = cv2.resize(image, (640, 480))
 
-    par = Parabola(241, 142, 80, 6)
+    par = Parabola(235, 131, 80, 6)
     # par.likelihood_parDir(image)
     # par.likelihood(image)
-    par.draw_para(image)
-
+    # par.draw_para(image)
+    
+    cv2.imshow('image', image)
+    cv2.setMouseCallback('image', click_event)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.polylines(image, np.array([pts_para]), False, [0, 0, 0], 2)
+    cv2.imshow('image', image)
+    cv2.waitKey(0)
+    
     # ell = Ellipse(190, 140, 20, 20)
     # ell.draw_ell(image)
