@@ -1,0 +1,86 @@
+<application>
+<name> gaze_tracking </name>
+
+<dependencies>
+</dependencies>
+
+<module>
+    <name> yarpdataplayer </name>
+    <parameters> </parameters>
+    <node> localhost </node>
+</module>
+
+<module>
+    <name> vParticleFilterTracker_inclPar</name>
+    <parameters> --name /vpf --particles 20 --obsthresh 0.05 --truethresh 0.5 --threads 4 --bins 64 --gain 1.0 --start </parameters>
+<environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+    <node> localhost </node>
+</module>
+
+<module>
+    <name> vPreProcess </name>
+    <parameters>--undistort false </parameters>
+    <node> localhost </node>
+</module>
+
+<module>
+    <name> vFramerLite </name>
+    <parameters>--name /vFramer --displays "(/ch0dvs (CIRC AE ISO))" </parameters>
+	<dependencies>
+        <port timeout="100.0" request="load /home/aniket/yarp-install/projects/particle-filter-tracking/Data/yarp_out_new/batch05" reply="[ok]">/yarpdataplayer/rpc:i</port>
+    </dependencies>
+    <node> localhost </node>
+</module>
+
+
+<module>
+   <name> yarpview </name>
+   <parameters>--name /viewer/ch0dvs --x 30 --y 30 --w 640 --h 480 --synch </parameters>
+   <node> localhost </node>
+</module>
+
+<module>
+   <name> yarpview </name>
+   <parameters>--name /viewer/debug --x 30 --y 30 --w 640 --h 480 --synch </parameters>
+   <node> localhost </node>
+</module>
+
+<connection>
+  <from>/file/ch0dvs:o</from>
+  <to>/vPreProcess/AE:i</to>
+  <protocol>fast_tcp</protocol>
+</connection>
+
+<connection>
+  <from>/vPreProcess/left:o</from>
+  <to>/vpf/AE:i</to>
+  <protocol>fast_tcp</protocol>
+</connection>
+
+<connection>
+  <from>/vPreProcess/left:o</from>
+  <to>/vFramer/ch0dvs/AE:i</to>
+  <protocol>fast_tcp</protocol>
+</connection>
+
+<connection>
+  <from>/vpf/GAE:o</from>
+  <to>/vFramer/ch0dvs/GAE:i</to>
+  <protocol>fast_tcp</protocol>
+</connection>
+
+
+<connection>
+  <from>/vFramer/ch0dvs/image:o</from>
+  <to>/viewer/ch0dvs</to>
+  <protocol>fast_tcp</protocol>
+</connection>
+
+<connection>
+  <from>/vpf/debug:o</from>
+  <to>/viewer/debug</to>
+  <protocol>fast_tcp</protocol>
+</connection>
+
+
+</application>
