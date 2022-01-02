@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(vParticleFilterTracker_comb)
-#project(vParticleFilterTracker_inclPar)
-#project(vParticleFilterTracker_strPar)
+project(vParticleFilterTracker_inclPar)
 
 if(NOT CMAKE_CONFIGURATION_TYPES)
     if(NOT CMAKE_BUILD_TYPE)
@@ -26,10 +24,8 @@ find_package(event-driven REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-add_executable(${PROJECT_NAME} src/vControlLoopDelay_comb.cpp src/vParticle_comb.cpp
-    include/vControlLoopDelay_comb.h include/vParticle_comb.h)
-#add_executable(${PROJECT_NAME} src/vControlLoopDelay_strPar.cpp src/vParticle_strPar.cpp
-#    include/vControlLoopDelay_strPar.h include/vParticle_strPar.h)
+add_executable(${PROJECT_NAME} src/vControlLoopDelay_inclPar.cpp src/vParticle_inclPar.cpp
+    include/vControlLoopDelay_inclPar.h include/vParticle_inclPar.h)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE YARP::YARP_os
                                               YARP::YARP_init
